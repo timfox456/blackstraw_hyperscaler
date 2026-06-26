@@ -19,25 +19,29 @@
 
 GCP's **Gemini Enterprise Agent Engine + ADK + A2UI/A2A** stack is a **strong, genuinely impressive platform for conversational, human-in-the-loop marketer-facing portals** — exactly the workload the two Google-supplied POCs demonstrate. For that workload class, the platform provides real, native primitives (Agent Engine runtime, A2UI widget protocol, A2A delegation, Agent Registry, SPIFFE agent identity, Model Armor, Cloud Trace) that would otherwise take months to build.
 
-However, **the POCs do not exercise Circana's batch workloads, such as batch attribution at the scale of hundreds of thousands to millions of UPCs, nor integration with Circana's existing **Emiri** entity-resolution APIs and **IRI Advantage LD** hierarchy API. Those workloads are deterministic, staged, API-orchestration pipelines — not conversational supervisor patterns — and the pilot provides **no evidence** that GCP's agent framework is the right home for them. Several enterprise-critical capabilities (real Model Armor, end-to-end user identity, private MCP connectivity, long-term memory, prompt-version lineage, RAG) were **not exercised** in the pilot, either blocked by permissions, not configured in the POC code, or substituted with local shims that mask the real service's behavior.
+**A second piece of evidence sharpens this verdict:** the `weather_agent_codebase/` reference implementation (the codebase Rishabh actually exercised — see Section 2.5) demonstrates that many capabilities the **Circana POC** marks as Blocked or Weak are in fact **straightforwardly implementable on GCP** with documented patterns Google has already shipped — Firestore session/memory by default, per-agent dedicated SAs, W3C A2A trace propagation, per-tool span instrumentation with prompt-version lineage, native MCP via stdio, and Vertex AI RAG. The Circana POC's gaps in these areas are therefore best read as **implementation choices made by Google's pilot team**, not platform limits. Where the weather reference also leaves a gap (in-agent Model Armor wiring, end-user identity propagation, multimodal `stream_query`, batch scale), the gap is genuinely platform-level.
 
-**Recommendation:** Treat GCP as a **viable, leading candidate for the conversational HITL portal layer** of Circana's architecture (e.g., a marketer-facing attribution-review or audience-building portal). Treat the **batch attribution and Emiri/IRI API orchestration layers as unproven on GCP's agent framework** — they are better served by LangGraph (or plain Python) calling Azure OpenAI, independent of which cloud hosts the conversational surface. Do **not** let the POC's polished portal demo substitute for load/cost testing at Circana's real batch volumes.
+However, **the POCs and the reference codebase together do not exercise Circana's batch workloads** — batch attribution at the scale of hundreds of thousands to millions of UPCs, nor integration with Circana's existing **Emiri** entity-resolution APIs and **IRI Advantage LD** hierarchy API. Those workloads are deterministic, staged, API-orchestration pipelines — not conversational supervisor patterns — and the pilot provides **no evidence** that GCP's agent framework is the right home for them. The remaining true platform-level gaps relevant to Circana (real in-agent Model Armor, end-to-end user identity from Entra to MCP, multimodal binary attachments through `stream_query`, batch-scale cost and concurrency) are unsolved in either implementation.
+
+**Recommendation:** Treat GCP as a **viable, leading candidate for the conversational HITL portal layer** of Circana's architecture (e.g., a marketer-facing attribution-review or audience-building portal) — and recognize that the Circana POC's current state understates GCP's portal-layer capability ceiling, because Google's own reference implementation does more. Treat the **batch attribution and Emiri/IRI API orchestration layers as unproven on GCP's agent framework** — they are better served by LangGraph (or plain Python) calling Azure OpenAI, independent of which cloud hosts the conversational surface. Do **not** let the POC's polished portal demo substitute for load/cost testing at Circana's real batch volumes.
 
 ### Scorecard at a glance
 
-| # | Section | GCP verdict | Pilot coverage |
-|---|---|---|---|
-| 01 | Chat host & MCP apps | **Partial** — strong A2UI; streaming & MCP-in-trace gaps | Partial |
-| 02 | Complex prompt orchestration | **Partial** — orchestration visible; prompt versioning weak | Partial |
-| 03 | Multi-agent supervisor flow | **Partial** — routing observable; MCP/A2A interop unproven | Partial |
-| 04 | Memory across agent lifecycle | **Weak** — short-term only; long-term not really implemented | Low |
-| 05 | MCP private connectivity | **Weak** — MCP on public Cloud Run; private path not built | Low |
-| 06 | End-to-end identity propagation | **Not met** — service-account identity, not user identity | Blocked |
-| 07 | Tracing & observability | **Strong** — best-in-class native tracing | High |
-| 08 | Cost & resource isolation | **Strong** at project level; **unknown** at batch scale | Partial |
-| 09 | Ontology & entity resolution | **Partial** — entity resolution works; ontology/RAG blocked | Partial |
-| 10 | Governance & lineage | **Weak** — agent version ok; prompt/tool/skill/policy lineage weak | Low |
-| 11 | DevOps non-PROD→PROD | **Strong** — repeatable, rollback works | High |
+The **POC verdict** is what the Circana POC ships today. The **Platform verdict** factors in the weather-agent reference codebase (Section 2.5) — i.e., what is implementable on GCP today with documented patterns Google has shipped. Where they differ, the right input to "is GCP the right hyperscaler" is the **Platform verdict**.
+
+| # | Section | POC verdict (Circana POC as deployed) | Platform verdict (weather-ref + POC) | Pilot coverage |
+|---|---|---|---|---|
+| 01 | Chat host & MCP apps | **Partial** — strong A2UI; streaming & MCP-in-trace gaps | **Partial** — A2UI strong; native `MCPToolset` stdio shown to work in weather ref; TTFT/chunk-streaming claim needs re-test (weather README contradicts Rishabh) | Partial |
+| 02 | Complex prompt orchestration | **Partial** — orchestration visible; prompt versioning absent | **Partial** — prompt-version-as-span-attribute pattern shown in weather ref; no managed prompt registry → trace binding | Partial |
+| 03 | Multi-agent supervisor flow | **Partial** — routing observable; MCP/A2A interop unproven | **Partial** — A2A trace propagation pattern demonstrated in weather ref (W3C + conversation_id); LLM-routed delegation still not a platform primitive | Partial |
+| 04 | Memory across agent lifecycle | **Weak** — short-term only; long-term not implemented | **Partial** — Firestore session/memory is the default in weather ref; Gemini Memory Bank still not wired in either | Low (POC) / Partial (ref) |
+| 05 | MCP private connectivity | **Weak** — MCP on public Cloud Run; private path not built | **Weak** — standard `MCPToolset` is not bespoke (weather ref); VPC SC / private path unbuilt in both | Low |
+| 06 | End-to-end identity propagation | **Not met** — service-account identity, not user identity | **Partial** — per-agent dedicated SAs (AGENT_IDENTITY) demonstrated in weather ref; end-user identity (Entra → JWT → MCP) unbuilt in both | Blocked (POC) / Partial (ref) |
+| 07 | Tracing & observability | **Strong** — best-in-class native tracing | **Strong** — confirmed by weather ref's OTel exporters + per-tool spans + multi-agent topology | High |
+| 08 | Cost & resource isolation | **Partial** — project attribution works; per-step cost / batch-scale unknown | **Partial** — same; weather ref does not test batch either | Partial |
+| 09 | Ontology & entity resolution | **Partial** — entity resolution works; ontology/RAG blocked by permissions | **Partial** — Vertex AI RAG corpus capability fully demonstrated in weather ref; ontology layer unbuilt in both | Partial |
+| 10 | Governance & lineage | **Weak** — agent version ok; prompt/tool/skill/policy lineage weak | **Partial** — prompt/tool version-attribute pattern shown in weather ref; Model Armor punted to gateway even in ref; Agent Gateway unbuilt in both | Low (POC) / Partial (ref) |
+| 11 | DevOps non-PROD→PROD | **Partial** — repeatable in principle, friction-laden in practice (10 documented gotchas, manual scripting, env drift) | **Partial** — weather ref's `--no-firestore` / `--no-custom-sa` flags show graceful-degradation discipline, but deployment is still manual scripting, not managed CI/CD | High |
 
 ### The single most important gap
 
@@ -54,20 +58,69 @@ This evaluation is grounded in direct hands-on experience from:
    - `a2a_a2ui_on_prem` — the "on-prem" POC: IRI Liquid Data entity resolution + audience sizing pipeline + Flask portal.
    - Deployment steps, gotchas, and live resource IDs are documented in `docs/deployment/DEPLOYMENT_GUIDE.md`.
 2. **Rishabh Mendiratta's parallel hands-on findings** — two reports in `docs/rishabh/`:
-   - **Expanded report** (`GCP_Hyperscaler_Evaluation_Report_Expanded.docx.md`) — the grounded one: real trace IDs and specific pros/cons for ~7 criteria he tested hands-on. Used as primary evidence where it covers a section.
+   - **Expanded report** (`GCP_Hyperscaler_Evaluation_Report_Expanded.docx.md`) — the grounded one: real trace IDs and specific pros/cons for ~7 criteria he tested hands-on. Used as primary evidence where it covers a section. **Important: Rishabh's hands-on testing was performed against the `weather_agent_codebase/` reference implementation (an ADK weather + host agent harness with deliberate hardening for Cloud Trace, Firestore, OTel, RAG, A2A trace propagation, and per-agent dedicated service accounts), not against the Circana POCs themselves.** See Section 2.5 for what this codebase implements and why it matters for interpreting his findings.
    - **Full report** (`GCP_Hyperscaler_Evaluation_Full_Report.docx.md`) — mirrors all 44 sub-criteria with real **Status / Pass Result / Trace ID** fields (hands-on data), but its **Pros/Cons are templated filler** (identical generic text per section). The Full report's statuses and trace IDs are used as evidence for sections the Expanded report doesn't cover; its templated Pros/Cons are not.
 3. **The POC's own `gap_analysis.md`** — Google's own admitted gaps (B1–B6), which candidly document what the POC does vs. does not do.
 4. **Reading the deployed POC source code** — `agent.py`, `tools.py`, `orchestrator.py`, `components.py`, `deploy.py`, `combined_architecture_design.md` — to verify README claims against actual implementation (several claims diverge from deployed code; these divergences are findings, not criticisms).
-5. **Circana use-case context** — `docs/emiri/IRI_ADVANTAGE_API.md`, `docs/emiri/LIQUID_DATA_REPORTS.md`, and the framework comparison's Emiri analysis.
-6. **Meeting notes, June 26 2026** — `docs/meetings/meeting_20260626.md` — defining the evaluation ask and the hands-on grounding requirement.
+5. **Reading the `weather_agent_codebase/` reference implementation** — `weather_agent/agent.py`, `host_agent/agent.py`, `deploy_agent_engine.py`, `gcp/observability/otel_setup.py`, `gcp/observability/context_propagation.py`, `gcp/services/firestore_services.py`, `gcp/retrieval/weather_rag.py`. This is the codebase Rishabh exercised. It implements several capabilities the Circana POC chose not to (Firestore session/memory by default, per-agent dedicated runtime SAs, per-tool span instrumentation with `prompt.id`/`prompt.version` attributes, W3C `traceparent` + `gen_ai.conversation.id` correlation across A2A, native `MCPToolset` via stdio, Vertex AI RAG corpus + retrieval). It is treated here as the **GCP-platform-capability ceiling demonstrated by a hardened reference**, in contrast to the Circana POC which is the **floor of what Google chose to ship for the Circana engagement**.
+6. **Circana use-case context** — `docs/emiri/IRI_ADVANTAGE_API.md`, `docs/emiri/LIQUID_DATA_REPORTS.md`, and the framework comparison's Emiri analysis.
+7. **Meeting notes, June 26 2026** — `docs/meetings/meeting_20260626.md` — defining the evaluation ask and the hands-on grounding requirement.
 
 **Evidence conventions in this document:**
-- `[Trace: <id>]` = a Cloud Trace ID captured by Rishabh during hands-on testing.
-- `[POC: <file>:<line>]` = evidence in the deployed POC source code.
+- `[Trace: <id>]` = a Cloud Trace ID captured by Rishabh during hands-on testing of the **weather agent reference codebase** (see Section 2.5).
+- `[POC: <file>:<line>]` = evidence in the deployed Circana POC source code.
+- `[Weather: <file>:<line>]` = evidence in the `weather_agent_codebase/` reference implementation.
 - `[Deploy: <topic>]` = evidence from the deployment guide (Tim's hands-on).
-- `[Gap: B<n>]` = evidence from the POC's own `gap_analysis.md`.
-- `[Rishabh]` = Rishabh's Expanded report finding.
+- `[Gap: B<n>]` = evidence from the Circana POC's own `gap_analysis.md`.
+- `[Rishabh]` = Rishabh's Expanded report finding (weather-agent-codebase-based; see Section 2.5 for reading guidance).
 - `[Inferred]` = an extrapolation not directly tested; clearly marked.
+
+---
+
+## 2.5. About the weather-agent reference codebase (how to read Rishabh's findings)
+
+Rishabh's hands-on testing was performed against `weather_agent_codebase/`, a deliberately hardened ADK reference implementation that ships in this repo alongside the Circana POCs. This is the most important methodology fact in the document, because it means **Rishabh's results are evidence about what GCP can do when properly implemented, not evidence about what the Circana POC ships.** Many of his "Pass" results validate the platform; many of his "Blocked / Fail" results validate that even Google's reference implementation hasn't yet solved a given gap. Reading his Pass/Fail signals through this lens isolates "platform-capability gap" from "Circana POC implementation choice" — which is the most decision-relevant distinction for Circana.
+
+### What the weather agent codebase implements that the Circana POC does not
+
+| Capability | Weather agent | Circana POC |
+|---|---|---|
+| **Firestore session + memory by default** | `deploy_agent_engine.py` enables `FirestoreSessionService` + `FirestoreMemoryService` by default; `--no-firestore` is the escape hatch for corp Org Policy blocks. `gcp/services/firestore_services.py` ships native-first + custom-fallback implementations conforming to `BaseSessionService`/`BaseMemoryService`. | `InMemoryMemoryService` / `InMemorySessionService` in the local-execution fallback; cloud sub-agent memory not migrated. |
+| **Per-agent dedicated runtime SAs (AGENT_IDENTITY)** | `deploy_agent_engine.py` pins `weather-agent-runtime@...` / `host-agent-runtime@...`; `setup_service_account.ps1` provisions with least-privilege role bindings. | Uses `google.auth.default()` — Vertex AI's default agent SA (DEVELOPER_IDENTITY). |
+| **Per-tool span instrumentation** | Every tool body wrapped in `with start_tool_span("tool_name"):` setting `gen_ai.tool.name`, `gen_ai.operation.name`, plus prompt/version/conversation attributes. | Standard ADK `FunctionTool` wrapping with no custom span instrumentation. |
+| **Prompt → trace linkage** | `PROMPT_ID` / `PROMPT_VERSION` module-level constants attached as span attributes on every tool call. | Prompts are inline Python strings with no version metadata. |
+| **W3C `traceparent` + `gen_ai.conversation.id` propagation across A2A** | `gcp/observability/context_propagation.py` injects W3C headers and a belt-and-suspenders correlation id (stuffed into ADK `user_id`, unwrapped on the receiving side). Cross-agent traces are joinable today via attribute filter; native W3C single-trace-id is roadmap. | Two separate code paths (GenAI SDK for Reasoning Engine URLs, A2A SDK HTTP client for others); no trace-context propagation. |
+| **OTel exporters to Cloud Trace + Cloud Monitoring** | `gcp/observability/otel_setup.py` wires `CloudTraceSpanExporter`, `CloudMonitoringMetricsExporter`, resource attributes (`service.name`, `gen_ai.agent.name`), and `RequestsInstrumentor` auto-instrumentation. | Relies on ADK default tracing only. |
+| **Native MCP via stdio** | `MCPToolset(StdioConnectionParams(StdioServerParameters(command="npx", args=["-y", "@modelcontextprotocol/server-fetch"])))` — standard ADK pattern. | Custom 100-line tri-fallback HTTP adapter (`tools.py:87–188`). |
+| **Vertex AI RAG corpus + retrieval tool** | `gcp/retrieval/weather_rag.py` provisions `weather-knowledge-corpus` via `rag.create_corpus(...RagManagedVertexVectorSearch())`, seeds with `rag.upload_file`, builds `VertexAiRagRetrieval(similarity_top_k=3, vector_distance_threshold=0.5)`. | `SemanticLayerAgent` is a `projects/dummy/...` placeholder URL. |
+| **Multi-agent topology / `gen_ai.agent.downstream`** | Host agent tags spans with `gen_ai.agent.downstream=weather_agent`; Gemini Enterprise Observability renders the cross-agent edge. | Not instrumented. |
+
+### What the weather agent does **not** solve (so the doc's gap-finding here is a true platform-level gap)
+
+| Capability | Status in weather agent |
+|---|---|
+| **Real Vertex AI Model Armor in-agent** | The weather README explicitly punts: "Section 5 — apply at the Apigee / Agent Gateway layer per PDF Section 5; no code change required because Model Armor is decoupled (model-agnostic) and applied at the gateway." Even Google's reference impl does not wire Model Armor into the agent. |
+| **End-user identity propagation (Entra → JWT → MCP)** | Weather impl uses dedicated per-agent SAs but does not propagate end-user identity. |
+| **Multimodal binary attachments through `stream_query`** | `analyze_weather_image` accepts `image_description: str`, not bytes. README admits raw bytes are not in traces — only GCS `content_ref` URIs. |
+| **Batch / cost-at-scale** | Weather agent is also single-user; no batch test, no scale-to-zero evidence. |
+| **Deterministic graph routing as a platform primitive** | `host_agent.py` hardcodes `WEATHER_AGENT_RE_ID` and calls `:streamQuery` via raw `requests.post`. No more "platform-primitive" routing than the Circana POC. |
+
+### How to read each section verdict in this document
+
+Each section verdict now distinguishes two questions:
+
+- **POC verdict** — what the deployed Circana POC actually demonstrates (Pass / Partial / Blocked / Fail).
+- **Platform verdict** — what GCP-the-platform can do when the weather-agent-style hardening is applied.
+
+The two often differ. The **platform verdict** is the right input to "is GCP the right hyperscaler for Circana"; the **POC verdict** is the right input to "is the Google-supplied Circana POC production-ready as-is." Both matter; conflating them is the failure mode this section is here to prevent.
+
+### One direct contradiction worth re-testing
+
+The weather README claims: "Per-chunk visibility is delivered as **span events** (not separate spans) inside the parent `chat gemini-2.5-flash` span — open the span in Cloud Trace UI and the timeline shows chunk-arrival timestamps. Useful for computing **TTFT (time-to-first-token)** = `events[0].timestamp - span.start_time`."
+
+Rishabh reported: "Per chunk streaming events and TTFT metrics were unavailable."
+
+These two statements are not compatible. One of them is wrong. The Circana POC's "no TTFT" verdict (Section 01.b) inherits from Rishabh's finding and is flagged below as needing re-test before being quoted.
 
 ---
 
@@ -99,29 +152,32 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 01.a MCP applet render visible in trace
 
-**Status:** Blocked
-**Evidence:** `[Rishabh]` "MCP App Visible in Trace. Fail. Reasoning Engine containers lacked Node.js and public SSE infrastructure required by MCP deployment approaches." `[POC: tools.py:87-188]` `call_mcp_tool` does not run MCP inside the Reasoning Engine; it falls back to an HTTP POST to the separately-deployed Cloud Run MCP server (`/tools/call`), or a local stdio subprocess. The Agent Registry path (`get_mcp_toolset`) is attempted only when `MCP_SERVER_NAME` is set, and the code comments that it falls back to "legacy HTTP POST" on failure. `[Deploy: MCP server]` MCP server deployed as a standalone Cloud Run service (`circana-mcp-server`), not as an in-engine applet.
+**POC Status:** Blocked
+**Platform Status:** Partial — re-test required (see contradiction below)
+**Evidence:** `[Rishabh]` "MCP App Visible in Trace. Fail. Reasoning Engine containers lacked Node.js and public SSE infrastructure required by MCP deployment approaches." `[POC: tools.py:87-188]` `call_mcp_tool` does not run MCP inside the Reasoning Engine; it falls back to an HTTP POST to the separately-deployed Cloud Run MCP server (`/tools/call`), or a local stdio subprocess. The Agent Registry path (`get_mcp_toolset`) is attempted only when `MCP_SERVER_NAME` is set, and the code comments that it falls back to "legacy HTTP POST" on failure. `[Deploy: MCP server]` MCP server deployed as a standalone Cloud Run service (`circana-mcp-server`), not as an in-engine applet. **Contradicting evidence:** `[Weather: weather_agent/agent.py:190-198]` declares `MCPToolset(StdioConnectionParams(StdioServerParameters(command="npx", args=["-y", "@modelcontextprotocol/server-fetch"])))` — the **standard ADK pattern** using `npx`-based stdio MCP. `[Weather: deploy_agent_engine.py:163]` includes `mcp>=1.0.0` in the deployed `requirements`. Either (a) `npx` **is** available in the Reasoning Engine container and Rishabh's "lacked Node.js" finding is stale/wrong, or (b) the weather reference's `MCPToolset` declaration does not actually work in deployment — which would be a real platform bug. This needs re-test before being quoted to Circana.
 
 **Advantages on GCP:**
 1. MCP servers can be deployed as first-class Cloud Run containers and registered in the **Agent Registry** for discoverability — the `get_mcp_toolset` integration path exists and is documented (`[POC: tools.py:116-122]`).
-2. Cloud Run's IAM-based invocation (`--no-allow-unauthenticated` + ID token auth, `[POC: tools.py:96-110]`) gives MCP endpoints a solid auth boundary without custom API-key plumbing.
+2. **Standard ADK `MCPToolset` with stdio MCP servers is a clean one-call pattern** in Google's reference implementation (`[Weather: weather_agent/agent.py:190-198]`) — Cloud Run + ID-token auth is the right fallback for cases where stdio isn't appropriate.
 
 **Limitations on GCP:**
-1. MCP tool execution does **not** surface as native spans in the agent's trace when routed via the HTTP fallback — the very path the deployed POC uses — so MCP-app visibility in trace is not achieved out of the box.
-2. The Agent Engine container environment lacks the Node.js runtime and public SSE endpoint that standard MCP deployment approaches assume, forcing a Python HTTP-adapter pattern (`[POC: tools.py:143-188]`) that is bespoke glue — the opposite of "without bespoke glue."
+1. MCP tool execution does **not** surface as native spans in the agent's trace when routed via the **Circana POC's HTTP fallback** — the path that POC actually uses (`[POC: tools.py:143-188]`). The weather reference's stdio `MCPToolset` is expected to surface natively, but this was not separately validated in Rishabh's tests.
+2. **Whether MCP-via-npx-stdio works inside the Reasoning Engine container is unresolved.** Rishabh's hands-on tests reported it does not; Google's reference implementation declares it as the standard pattern. This contradiction is the single most important re-test before relying on native MCP on GCP.
 
 #### 01.b Streaming visible in trace
 
-**Status:** Partial Pass
-**Evidence:** `[Trace: c726b93cbb1ef459a762a2ab27cb6774]` `[Rishabh]` "Invocation, invoke_agent, call_llm, generate_content, and execute_tool spans were captured along with model metadata and token statistics. Per chunk streaming events and TTFT metrics were unavailable. Tracing required explicit enablement." `[Gap: B1]` Google's own gap analysis: "Streaming: Chat responses return as single JSON blocks" — the POC portal returns single JSON blocks, not token streams. Fix listed as "Refactor the FastAPI chat endpoint to return a StreamingResponse using SSE."
+**POC Status:** Partial Pass (portal returns single JSON blocks per `[Gap: B1]`)
+**Platform Status:** Partial Pass — **direct contradiction between sources; re-test before quoting**
+**Evidence:** `[Trace: c726b93cbb1ef459a762a2ab27cb6774]` `[Rishabh]` "Invocation, invoke_agent, call_llm, generate_content, and execute_tool spans were captured along with model metadata and token statistics. Per chunk streaming events and TTFT metrics were unavailable. Tracing required explicit enablement." `[Gap: B1]` Google's own gap analysis: "Streaming: Chat responses return as single JSON blocks" — the POC portal returns single JSON blocks, not token streams. Fix listed as "Refactor the FastAPI chat endpoint to return a StreamingResponse using SSE." **Contradicting evidence:** `[Weather: README.md "Streaming"]` claims "Per-chunk visibility is delivered as **span events** (not separate spans) inside the parent `chat gemini-2.5-flash` span — open the span in Cloud Trace UI and the timeline shows chunk-arrival timestamps. Useful for computing **TTFT (time-to-first-token)** = `events[0].timestamp - span.start_time`." If the weather README is correct, TTFT is computable as a derived metric from existing span events (just not as a separate span). If Rishabh's finding is correct, the README is aspirational. The verdict on this row should be revisited once one party is verified.
 
 **Advantages on GCP:**
 1. Native **GenAI semantic spans** (`invoke_agent`, `call_llm`, `generate_content`, `execute_tool`) are generated automatically once tracing is enabled, with model metadata and token accounting — a rich, hierarchical trace with no custom instrumentation (`[Rishabh]`).
-2. The span hierarchy makes the agent execution flow easy to follow in Cloud Trace, which is a genuine productivity win for debugging conversational turns.
+2. The span hierarchy makes the agent execution flow easy to follow in Cloud Trace. If chunk-arrival span events are real (`[Weather: README]`), TTFT becomes a derived metric from a single LLM span — no separate-span-per-chunk required.
 
 **Limitations on GCP:**
-1. **No chunk-level streaming visibility and no TTFT (time-to-first-token) metrics** — a real gap for latency-sensitive conversational UX work (`[Rishabh]`).
-2. **Tracing is not enabled by default** — it requires explicit `enable_tracing` at deploy time, and custom tools require additional instrumentation to appear as spans (`[Rishabh]`). The POC portal itself doesn't stream at all (`[Gap: B1]`).
+1. **The Circana POC portal doesn't stream at all** — it returns single JSON blocks per `[Gap: B1]`. SSE refactor is on the gap list but not done.
+2. **Tracing is not enabled by default** — it requires explicit `enable_tracing` at deploy time (`[Weather: deploy_agent_engine.py:132]` sets `"enable_tracing": True` explicitly), and custom tools require additional instrumentation to appear as spans (`[Rishabh]`). A missed flag means zero observability.
+3. **Chunk-level / TTFT visibility is contested** between Rishabh's hands-on (unavailable) and Google's reference README (computable via span events). This is the single most important streaming-related re-test before quoting verdicts on TTFT.
 
 #### 01.c Attachments visible in trace
 
@@ -183,16 +239,17 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 02.c Each step traceable to a specific prompt version
 
-**Status:** Partial Pass
-**Evidence:** `[Rishabh]` "Custom prompt identifiers were possible but no native prompt-to-trace linkage exists." `[Meeting notes]` Rishabh stated: "the create version API… doesn't version the prompts correctly" and "prompt management and cloud trace are pretty disconnected… you have to go in and manually do that." `[POC: agent.py:18-41]` The "prompt" is a hardcoded Python string (`ROLE_DESCRIPTION` + `WORKFLOW_DESCRIPTION` + `UI_DESCRIPTION`) assembled at agent creation — there is no prompt registry, no version ID, no prompt-to-trace binding.
+**POC Status:** Fail — Circana POC's prompts are inline strings with no version metadata
+**Platform Status:** Partial Pass — documented pattern adopted by Google's reference implementation
+**Evidence:** `[Rishabh]` "Custom prompt identifiers were possible but no native prompt-to-trace linkage exists." `[Meeting notes]` Rishabh stated: "the create version API… doesn't version the prompts correctly" and "prompt management and cloud trace are pretty disconnected… you have to go in and manually do that." `[POC: agent.py:18-41]` The "prompt" is a hardcoded Python string (`ROLE_DESCRIPTION` + `WORKFLOW_DESCRIPTION` + `UI_DESCRIPTION`) assembled at agent creation — there is no prompt registry, no version ID, no prompt-to-trace binding. **Reference-implementation evidence:** `[Weather: weather_agent/agent.py:36-37]` declares module-level `PROMPT_ID = "7282778269173153792"` / `PROMPT_VERSION = "1"`, and `[Weather: weather_agent/agent.py:70-71, 96-97, 143-144, 169-170]` attach those as `prompt.id` / `prompt.version` span attributes on **every** tool call. This is exactly the discipline the spreadsheet asks for, applied consistently in Google's own reference implementation.
 
 **Advantages on GCP:**
-1. **Custom prompt identifiers can be attached as span attributes** manually, so a disciplined team *can* build prompt-to-trace linkage with custom instrumentation (`[Rishabh]`).
-2. Reasoning Engine deployment IDs give agent-level versioning (see 10.a), which is a foundation you could build prompt versioning on top of.
+1. **The prompt-version-as-span-attribute pattern is demonstrated working in Google's reference implementation** (`[Weather: weather_agent/agent.py]`) — `prompt.id` and `prompt.version` attributes on every tool span give queryable prompt lineage with no managed-service dependency.
+2. Reasoning Engine deployment IDs give agent-level versioning (see 10.a), which composes naturally with the per-span `prompt.id`/`prompt.version` pattern for an "engine X + prompt Y" lineage tuple.
 
 **Limitations on GCP:**
-1. **No native Prompt Management → Cloud Trace linkage exists** — the two systems are disconnected, and the `create version` API does not correctly version prompts per hands-on testing (`[Meeting notes]`, `[Rishabh]`). This is a real platform gap, not a configuration issue.
-2. Building prompt lineage requires **custom engineering on every span** — manual, error-prone, and easy to forget — which undermines the "each step traceable to a specific prompt version" guarantee the spreadsheet asks for.
+1. **No managed Prompt Management → Cloud Trace linkage exists** — Vertex AI Prompt Management is not bound to the trace pipeline, and the `create version` API does not version prompts correctly per hands-on testing (`[Meeting notes]`, `[Rishabh]`). The capability gap is "no managed registry/binding"; the workable pattern is custom span attributes (as the weather ref shows).
+2. The Circana POC does **not** apply this pattern — its prompts are inline Python strings with no version metadata at all (`[POC: agent.py:18-41]`), so even the manual-instrumentation discipline isn't applied. Adopting the weather-ref pattern is a one-file change.
 
 ---
 
@@ -241,16 +298,17 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 03.d MCP and A2A interop visible in trace
 
-**Status:** Blocked
-**Evidence:** `[Rishabh]` "MCP infrastructure unavailable for end-to-end validation." `[POC: tools.py:487-505]` A2A is routed via the GenAI SDK's `agent_engines.get(...).on_message_send(...)` for `projects/...reasoningEngines/...` URLs, or via the `a2a-sdk` HTTP client for other URLs. MCP is a separate HTTP path (`tools.py:143-188`). The two protocols are handled in different code branches with no shared trace context. `[Companion framework doc]` "A2A trace propagation unconfirmed — open question whether OTel context propagates across A2A boundaries."
+**POC Status:** Blocked
+**Platform Status:** Partial — A2A trace-context propagation pattern is demonstrated in Google's reference implementation
+**Evidence:** `[Rishabh]` "MCP infrastructure unavailable for end-to-end validation." `[POC: tools.py:487-505]` A2A is routed via the GenAI SDK's `agent_engines.get(...).on_message_send(...)` for `projects/...reasoningEngines/...` URLs, or via the `a2a-sdk` HTTP client for other URLs. MCP is a separate HTTP path (`tools.py:143-188`). The two protocols are handled in different code branches with no shared trace context. **Reference-implementation evidence:** `[Weather: gcp/observability/context_propagation.py]` implements a belt-and-suspenders A2A trace-context propagation pattern: (1) `inject_w3c_context_into_headers` injects W3C `traceparent`/`tracestate` on outbound `:streamQuery` POSTs (forward-compatible for when Reasoning Engine inbound extracts W3C natively — already on the roadmap); (2) a `gen_ai.conversation.id` correlation attribute is generated host-side, packed into the ADK `user_id` field (`conv-{uuid}__{user}`), unwrapped by the receiving agent's tool from `ToolContext.session.user_id`, and re-stamped on its own span. Cloud Trace UI filter by that attribute reveals every span across both agents for one A2A call today. `[Weather: host_agent/agent.py:66-79]` shows the live integration.
 
 **Advantages on GCP:**
-1. Both **A2A (`a2a-sdk`) and MCP are supported** as patterns in the POC, and the Agent Registry aims to unify their discovery — the *intent* of interop is present in the platform design.
-2. A2A's structured `DataPart` slots (vs. raw text) give cleaner delegation payloads that are more traceable than unstructured prompts.
+1. **A2A trace-context propagation across agent boundaries is demonstrated working** in Google's reference implementation today via `gen_ai.conversation.id` correlation, with native W3C single-trace-id arriving when Reasoning Engine inbound extraction lands (`[Weather: gcp/observability/context_propagation.py]`, `[Weather: README "Persona switching"]`). The "unconfirmed open risk" framing earlier in this document was based on Circana POC code that does not implement the pattern, not on a platform limitation.
+2. A2A's structured `DataPart` slots (vs. raw text) give cleaner delegation payloads that are more traceable than unstructured prompts; the multi-agent topology map renders the cross-agent edge from `gen_ai.agent.downstream` attributes (`[Weather: README "Trace observability deep-dive"]`).
 
 **Limitations on GCP:**
-1. **MCP↔A2A interop was not validated end-to-end** — the POC routes them through separate code paths, and trace-context propagation across the A2A boundary is **unconfirmed** (a real open risk for distributed tracing).
-2. The Reasoning Engine's lack of Node.js/SSE (see 01.a) means MCP cannot run natively alongside A2A in the engine, forcing a split deployment that fragments the trace.
+1. **The Circana POC does not implement this trace-propagation pattern** — its A2A path (`[POC: tools.py:487-505]`) has no equivalent of the weather ref's `context_propagation.py`, so MCP↔A2A trace stitching in the deployed POC is fragmented. Adopting the weather-ref pattern is straightforward.
+2. **Native end-to-end single-trace-ID across A2A still awaits a Reasoning Engine roadmap item** (W3C inbound extraction). Until then, cross-agent correlation is via a queryable attribute, not a unified trace tree — slightly less ergonomic in Cloud Trace UI.
 
 ---
 
@@ -260,29 +318,31 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 04.a Short-term memory operates inside pilot
 
-**Status:** Pass
-**Evidence:** `[Trace: 7da2763e804cc3b46736f1a6bc476abd]` `[Rishabh]` "Agent recalled earlier information and token growth confirmed context accumulation." `[POC: tools.py:444-446]` Local mode uses `InMemorySessionService` + `InMemoryMemoryService`. `[POC README]` "Stateful Context Memory: In the local development runner, session state is managed via InMemoryMemoryService… deploying sub-agents to multi-worker or cloud environments requires migrating to Firestore-based memory."
+**POC Status:** Pass (functional) with cloud-amnesia risk on worker restart
+**Platform Status:** Pass — Firestore is the default in Google's reference implementation
+**Evidence:** `[Trace: 7da2763e804cc3b46736f1a6bc476abd]` `[Rishabh]` "Agent recalled earlier information and token growth confirmed context accumulation." `[POC: tools.py:444-446]` Local mode uses `InMemorySessionService` + `InMemoryMemoryService`. `[POC README]` "Stateful Context Memory: In the local development runner, session state is managed via InMemoryMemoryService… deploying sub-agents to multi-worker or cloud environments requires migrating to Firestore-based memory." **Reference-implementation evidence:** `[Weather: deploy_agent_engine.py:141-149]` enables `FirestoreSessionService` + `FirestoreMemoryService` **by default**; `--no-firestore` is the escape-hatch flag for projects where corp Org Policy blocks Firestore provisioning. `[Weather: gcp/services/firestore_services.py]` ships a native-first + custom-fallback implementation conforming to `BaseSessionService`/`BaseMemoryService` (`_CustomFirestoreSessionService` with `sessions/{app}/{user}/{sid}` Firestore document layout).
 
 **Advantages on GCP:**
 1. **Session context accumulation works natively** — the agent recalls earlier turns and token growth provides evidence of memory retention (`[Rishabh]`).
-2. Session IDs enable logical grouping of related interactions, and the Session Service abstraction has a Firestore-backed production path.
+2. **Firestore session/memory is the default** in Google's reference implementation, not an aspirational migration — `deploy_agent_engine.py` wires it by default and degrades gracefully when Org Policy blocks Firestore. The platform-level migration from `InMemoryMemoryService` is a single-flag change with a working reference, not a research project.
 
 **Limitations on GCP:**
 1. **Cross-turn relationships require custom correlation** — each turn emits as an independent trace, so multi-turn memory visualization is not native (`[Rishabh]`).
-2. The deployed POC uses **`InMemoryMemoryService` which does not survive worker restarts** (`[POC README]`, `[Deploy]`) — the production-safe Firestore migration is documented but **not implemented** in the POC, so short-term memory at scale is unproven.
+2. The Circana POC uses **`InMemoryMemoryService`** in its local-execution fallback (`[POC: tools.py:444-446]`); the production-safe Firestore wiring is documented but **not adopted by the Circana POC**, despite being the default in Google's other reference implementation.
 
 #### 04.b Long-term memory operates inside pilot
 
-**Status:** Not Exercised (and the repo name is misleading)
-**Evidence:** `[Rishabh]` "No persistent memory store was configured." `[Gap: B4]` "Long-term memory: preferences (e.g. preferred partner) are lost on new chats." `[POC: tools.py:444-446]` Despite the repo name `..._session_longTermMemory`, the deployed code uses `InMemoryMemoryService`, not the Gemini Enterprise Memory Bank. `[POC README §1.8]` claims "Gemini Enterprise Memory Bank to extract and recall long-term user preferences" but the gap analysis contradicts this: long-term memory is a documented *gap*, not a feature.
+**POC Status:** Not Exercised in Circana POC (the repo name is misleading)
+**Platform Status:** Partial — Firestore-backed long-term memory pattern shown in reference; Gemini Memory Bank still not wired
+**Evidence:** `[Rishabh]` "No persistent memory store was configured." `[Gap: B4]` "Long-term memory: preferences (e.g. preferred partner) are lost on new chats." `[POC: tools.py:444-446]` Despite the repo name `..._session_longTermMemory`, the deployed code uses `InMemoryMemoryService`, not the Gemini Enterprise Memory Bank. `[POC README §1.8]` claims "Gemini Enterprise Memory Bank to extract and recall long-term user preferences" but the gap analysis contradicts this: long-term memory is a documented *gap*, not a feature. **Reference-implementation evidence:** `[Weather: gcp/services/firestore_services.py:159-198]` ships `_CustomFirestoreMemoryService.add_session_to_memory` — a documented compaction hook that summarizes session state and persists to `memories/{app}/{user}/{mid}` Firestore documents. This is not the managed Gemini Memory Bank, but it is a working durable long-term-memory pattern.
 
 **Advantages on GCP:**
-1. The **Gemini Enterprise Memory Bank** is a documented platform service for long-term, cross-session user preference extraction — the *capability exists* in the platform even though the POC didn't wire it up.
-2. Firestore is available as a durable backing store, and the migration path from `InMemoryMemoryService` → `FirestoreMemoryService` is documented in the README.
+1. The **Gemini Enterprise Memory Bank** is a documented platform service for long-term, cross-session user preference extraction — the *managed capability exists* in the platform even though neither implementation wires it up.
+2. **A durable Firestore-backed long-term memory pattern is demonstrated** in Google's reference implementation (`[Weather: gcp/services/firestore_services.py]`), with a compaction hook ready to consume — so a Circana team can ship long-term memory without waiting for Memory Bank integration.
 
 **Limitations on GCP:**
-1. **Long-term memory was not exercised at all** in the pilot — no persistent memory store was configured, so "operates inside the pilot" is flatly not met (`[Rishabh]`, `[Gap: B4]`).
-2. The repo name advertises long-term memory but the **deployed code does not implement it** — a cautionary signal that README/aspiration ≠ reality, and that wiring up the real Memory Bank is non-trivial work the POC skipped.
+1. **Neither the Circana POC nor the weather reference wires up the managed Gemini Memory Bank** — the integration discipline (extract preferences → consolidate → recall on session start) is left to the developer in both. Validating the managed Memory Bank end-to-end is an open re-test.
+2. The Circana POC's repo name advertises long-term memory but the **deployed code does not implement it at all** — neither the managed Memory Bank nor the weather-ref's Firestore-backed pattern. A cautionary signal that README claims must be re-validated against deployed code.
 
 #### 04.c Compaction visible as discrete trace event
 
@@ -312,16 +372,17 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 04.e Semantic layer integrates with retrieval
 
-**Status:** Blocked
-**Evidence:** `[Rishabh]` "RAG permissions unavailable and retrieval integration could not be validated." `[POC: tools.py:346]` `SemanticLayerAgent` is registered with a `projects/dummy/...` URL — it is a placeholder, not deployed. `[POC: sub_agents/semantic_layer_agent.py]` exists but routes to dummy endpoints.
+**POC Status:** Blocked — `SemanticLayerAgent` is a dummy placeholder
+**Platform Status:** Partial — Vertex AI RAG capability fully demonstrated in reference implementation; blocked by IAM in pilot project
+**Evidence:** `[Rishabh]` "RAG permissions unavailable and retrieval integration could not be validated." `[POC: tools.py:346]` `SemanticLayerAgent` is registered with a `projects/dummy/...` URL — it is a placeholder, not deployed. `[POC: sub_agents/semantic_layer_agent.py]` exists but routes to dummy endpoints. **Reference-implementation evidence:** `[Weather: gcp/retrieval/weather_rag.py:155-201]` `create_or_get_rag_corpus()` provisions a Vertex AI RAG corpus via `rag.create_corpus(display_name="weather-knowledge-corpus", backend_config=rag.RagVectorDbConfig(vector_db=rag.RagManagedVertexVectorSearch()))`, seeds it with `rag.upload_file`, and builds a configured `VertexAiRagRetrieval(similarity_top_k=3, vector_distance_threshold=0.5)` ADK tool. `[Weather: weather_agent/agent_rag.py]` wires it into a standalone RAG agent that participates in the same OTel pipeline as other tools.
 
 **Advantages on GCP:**
-1. **Vertex AI Vector Search** is a first-class, managed vector store that integrates with the Agent platform — the retrieval building block exists on GCP.
-2. The platform has a `SemanticLayerAgent` slot in the topology design (`combined_architecture_design.md §2.A`), indicating the pattern is anticipated.
+1. **Vertex AI Vector Search + RAG corpora are demonstrated end-to-end** in Google's reference implementation (`[Weather: gcp/retrieval/weather_rag.py]`) — corpus provisioning, document seeding, ADK tool wiring, and OTel span emission all in one ~200-line module. The retrieval capability is not a maybe; it's shipping reference code.
+2. RAG calls emit `gen_ai.tool.name = retrieve_weather_knowledge` + `gen_ai.system = vertex_ai` spans with truncated retrieved chunks as span events (`[Weather: README "Trace observability for RAG calls"]`), giving filterable p95 latency / hit-rate metrics in Trace Explorer.
 
 **Limitations on GCP:**
-1. **Blocked by RAG/`aiplatform.ragCorpora.query` permissions** — the semantic-layer + retrieval integration could not be validated at all in the pilot (`[Rishabh]`).
-2. The deployed `SemanticLayerAgent` is a **dummy placeholder** (`tools.py:346`), so even the wiring is absent — this is one of the weakest areas of the pilot.
+1. **Blocked by `aiplatform.ragCorpora.query` IAM permissions in the Circana pilot project** — this is a project-IAM gap, not a capability gap (`[Rishabh]`). Once permissions are granted, the weather-ref pattern lifts and shifts.
+2. The Circana POC's `SemanticLayerAgent` is a **dummy placeholder** (`tools.py:346`) with no real wiring — so even if RAG permissions were granted today, build work remains in the Circana POC. Adopting the weather-ref pattern is the shortest path.
 
 ---
 
@@ -357,16 +418,17 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 05.c No bespoke vendor engineering required
 
-**Status:** Fail
-**Evidence:** `[Rishabh]` "Additional infrastructure and networking engineering were required." `[Deploy: §13]` 10 gotchas encountered. `[POC: tools.py:87-188]` `call_mcp_tool` is a 100-line custom adapter with three fallback strategies (Agent Registry → HTTP POST → local stdio subprocess) — bespoke glue. `[POC: deploy_mcp.py]` Required rewriting `sys.exit()` to `return 1`, adding `--clear-base-image`, and Dockerfile renaming. `[Gap: B5,B6]` Private path and identity delegation both require additional engineering.
+**POC Status:** Fail — Circana POC required significant bespoke engineering for its chosen pattern
+**Platform Status:** Partial — standard `MCPToolset` pattern is not bespoke; private-path / identity-delegation are platform gaps
+**Evidence:** `[Rishabh]` "Additional infrastructure and networking engineering were required." `[Deploy: §13]` 10 gotchas encountered. `[POC: tools.py:87-188]` `call_mcp_tool` is a 100-line custom adapter with three fallback strategies (Agent Registry → HTTP POST → local stdio subprocess) — bespoke glue. `[POC: deploy_mcp.py]` Required rewriting `sys.exit()` to `return 1`, adding `--clear-base-image`, and Dockerfile renaming. `[Gap: B5,B6]` Private path and identity delegation both require additional engineering. **Reference-implementation evidence:** `[Weather: weather_agent/agent.py:190-198]` uses the standard ADK pattern — a single `MCPToolset(StdioConnectionParams(StdioServerParameters(command="npx", args=...)))` declaration. No 100-line adapter, no tri-fallback chain. The Circana POC's bespoke glue is a property of its chosen approach, not a platform requirement.
 
 **Advantages on GCP:**
-1. The **Agent Registry + `get_mcp_toolset`** path *aims* to eliminate bespoke glue by resolving MCP servers from a central catalog — the platform's direction is correct.
+1. The **standard ADK `MCPToolset` pattern is not bespoke glue** — Google's reference implementation shows MCP integration as a one-call declaration (`[Weather: weather_agent/agent.py:190-198]`). The Agent Registry + `get_mcp_toolset` is an additional discovery layer on top.
 2. Cloud Run + ID-token auth is a relatively low-ceremony hosting model for MCP servers compared to building a custom container orchestrator.
 
 **Limitations on GCP:**
-1. **Significant bespoke engineering was required** — a 100-line tri-fallback MCP adapter, Dockerfile workarounds, deploy-script rewrites, and 10 documented gotchas — this directly fails the "no bespoke vendor engineering" criterion.
-2. The gap analysis itself lists private-path enforcement and end-to-end identity delegation as **Priority Next Steps** (`gap_analysis.md 🚀`), confirming these are not yet solved by the platform out of the box.
+1. **The Circana POC chose a non-standard pattern** (HTTP fallback with three strategies) and incurred the bespoke-engineering cost as a result. The 10 gotchas are real deployment friction. The standard pattern would have avoided most of them — but note the unresolved question from Section 01.a about whether the standard pattern actually works in the Reasoning Engine container.
+2. **Private-path enforcement and end-to-end user-identity delegation are genuine platform gaps** — the gap analysis lists them as **Priority Next Steps** (`gap_analysis.md 🚀`), and even Google's reference implementation does not solve them. These are not implementation-choice gaps; they are real build-work required on top of any GCP deployment.
 
 ---
 
@@ -376,16 +438,19 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 06.a End-user identity reaches MCP tool call
 
-**Status:** Blocked
-**Evidence:** `[Rishabh]` "Dependent on MCP and identity infrastructure." `[POC: tools.py:96-110]` `get_cloud_run_auth_headers` fetches a Google **ID token via `google.auth.default()`** — a service account, not the user's identity. `[Gap: B6]` "The MCP tool queries the database using a master VM service account, not the logged-in user's identity." `[POC: combined_architecture_design.md §7]` describes Entra ID federation with `offline_access` refresh tokens, but `gap_analysis.md` admits "Entra federation: Fake session user ID."
+**Two-part verdict:**
+- **Per-agent AGENT_IDENTITY (dedicated runtime SA):** **POC Status:** Not adopted. **Platform Status:** Pass — demonstrated in reference impl.
+- **End-user identity propagation (Entra → JWT → MCP):** **POC Status:** Blocked. **Platform Status:** Blocked — unbuilt in both implementations.
+
+**Evidence:** `[Rishabh]` "Dependent on MCP and identity infrastructure." `[POC: tools.py:96-110]` `get_cloud_run_auth_headers` fetches a Google **ID token via `google.auth.default()`** — Vertex AI's default agent SA (DEVELOPER_IDENTITY pattern), not a dedicated per-agent runtime SA, and not the end-user's identity. `[Gap: B6]` "The MCP tool queries the database using a master VM service account, not the logged-in user's identity." `[POC: combined_architecture_design.md §7]` describes Entra ID federation with `offline_access` refresh tokens, but `gap_analysis.md` admits "Entra federation: Fake session user ID." **Reference-implementation evidence for per-agent AGENT_IDENTITY:** `[Weather: deploy_agent_engine.py:104,111,116,182]` pins a dedicated per-agent runtime SA via `create_kwargs["service_account"] = "weather-agent-runtime@..."` / `"host-agent-runtime@..."`; `[Weather: gcp/iam/setup_service_account.ps1]` provisions these SAs with least-privilege bindings (`roles/aiplatform.user`, `roles/datastore.user`, `roles/cloudtrace.agent`, `roles/monitoring.metricWriter`, `roles/logging.logWriter`). This is the PDF's AGENT_IDENTITY pattern, fully implemented. **End-user identity propagation:** neither the Circana POC nor the weather reference implements Entra → user JWT → MCP forwarding. The weather agent uses dedicated per-agent SAs but does not propagate end-user identity into the tool call.
 
 **Advantages on GCP:**
-1. The **SPIFFE Agent Identity** capability (`identity_type: AGENT_IDENTITY`) gives each agent a cryptographically-attested identity for agent-to-platform auth — a strong primitive for non-repudiable auditing (`[POC README §3.GCP Agent Identity]`).
-2. The A2A SDK's `header_provider` hook (`[POC: tools.py:119]`) is a documented injection point for forwarding user identity tokens — the *mechanism* to propagate user identity exists.
+1. **Per-agent AGENT_IDENTITY is demonstrably implementable** — Google's reference implementation pins a dedicated runtime SA per agent at deploy time with `--no-custom-sa` as the graceful-fallback flag for restrictive Org Policies (`[Weather: deploy_agent_engine.py:79-91,182]`). This gives each agent a cryptographically-attested identity for least-privilege auditing.
+2. The A2A SDK's `header_provider` hook (`[POC: tools.py:119]`) is a documented injection point for forwarding user identity tokens — the *mechanism* to propagate user identity exists; the *content* (validated Entra JWT) is what's unbuilt.
 
 **Limitations on GCP:**
-1. **The deployed POC uses a service account, not the user's identity** — `google.auth.default()` produces a service-account token, so end-user identity does **not** reach the MCP tool call (`[POC: tools.py:96-110]`, `[Gap: B6]`).
-2. Entra ID federation is **fake in the POC** ("Fake session user ID" per `gap_analysis.md`), so the cross-IdP identity flow Circana would need (Microsoft Entra → GCP) is unvalidated.
+1. **The Circana POC uses neither per-agent AGENT_IDENTITY nor user-identity propagation** — `google.auth.default()` produces a default Vertex AI agent SA token (`[POC: tools.py:96-110]`, `[Gap: B6]`). Adopting the weather-ref's per-agent SA pattern is straightforward; user-identity propagation is genuinely new build work.
+2. **End-user identity propagation (Entra → JWT → MCP) is unbuilt in both implementations.** Entra ID federation is "fake session user ID" per `gap_analysis.md`, and the weather reference does not address it at all. This cross-IdP flow Circana would need (Microsoft Entra → GCP user-JWT → MCP server validates → impersonates user GCP IAM role) is the most significant unsolved identity gap.
 
 #### 06.b Identity propagation visible in trace
 
@@ -447,16 +512,17 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 07.c Skill events visible in trace
 
-**Status:** Partial Pass
-**Evidence:** `[Rishabh]` "Custom workflows appeared as execute_tool spans but no first-class skill abstraction existed." `[POC: agent.py:97-147]` `AgentCard` skills are **metadata** (id, name, description, tags, examples) for agent discovery — not runtime-traceable entities.
+**POC Status:** Partial Pass — `AgentCard` skill metadata exists but no runtime span linkage
+**Platform Status:** Partial Pass — per-tool span instrumentation pattern shown in reference impl
+**Evidence:** `[Rishabh]` "Custom workflows appeared as execute_tool spans but no first-class skill abstraction existed." `[POC: agent.py:97-147]` `AgentCard` skills are **metadata** (id, name, description, tags, examples) for agent discovery — not runtime-traceable entities. **Reference-implementation evidence:** `[Weather: gcp/observability/otel_setup.py:153-157, 177-189]` ships a `start_tool_span(tool_name)` helper that emits an `execute_tool {tool_name}` span with `gen_ai.tool.name` + `gen_ai.operation.name` semantic-convention attributes. `[Weather: weather_agent/agent.py:60,86,132,160]` wraps every tool body with this helper, so each tool invocation is a queryable span with skill-like identity. Adding `skill.id` as a span attribute on top is a one-line discipline.
 
 **Advantages on GCP:**
-1. The **AgentCard skill metadata** model (`agent.py:97-147`) gives a clean catalog of agent capabilities for discovery and routing.
-2. Custom workflows can be represented as `execute_tool` spans, so skill-like flows are *visible* even if not first-class.
+1. **Per-tool span instrumentation with GenAI semantic conventions is a clean, documented pattern** (`[Weather: gcp/observability/otel_setup.py]`) — `start_tool_span(...)` + `set_attribute("skill.id", ...)` gives skill-level lineage with no managed service required.
+2. The **AgentCard skill metadata** model (`agent.py:97-147`) gives a clean catalog of agent capabilities for discovery; combining it with per-span `skill.id` closes the discovery + runtime-lineage loop.
 
 **Limitations on GCP:**
-1. **No first-class skill abstraction exists** in the trace model — skills are agent-card metadata, not runtime-traceable entities, so "skill events visible in trace" is only partially met (`[Rishabh]`).
-2. Skill identity is not automatically attached to spans, so skill-level lineage requires custom instrumentation.
+1. **No first-class skill abstraction in the trace model** — skills are agent-card metadata; skill-to-span binding requires the manual discipline above (`[Rishabh]`).
+2. The Circana POC does **not** apply this discipline — its `FunctionTool` wrappers use ADK defaults, so skill IDs are not on spans today. Adopting the weather-ref pattern is straightforward but unwired.
 
 #### 07.d Inputs and outputs visible in trace
 
@@ -589,16 +655,17 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 09.d Retrieval uses resolved entity
 
-**Status:** Blocked
-**Evidence:** `[Rishabh]` "Blocked by aiplatform.ragCorpora.query permissions and unavailable RAG infrastructure."
+**POC Status:** Blocked
+**Platform Status:** Partial — RAG capability fully demonstrated in reference impl; pilot blocked by IAM
+**Evidence:** `[Rishabh]` "Blocked by aiplatform.ragCorpora.query permissions and unavailable RAG infrastructure." `[Weather: gcp/retrieval/weather_rag.py]` shows the full provisioning + retrieval pattern working end-to-end against Vertex AI RAG corpora.
 
 **Advantages on GCP:**
-1. **Vertex AI Vector Search + RAG corpora** are the platform-native retrieval path — the capability exists, just permission-blocked in the pilot.
-2. The architecture designs the semantic layer to integrate with retrieval (`combined_architecture_design.md §4`), so the *intent* is present.
+1. **Vertex AI Vector Search + RAG corpora are the platform-native retrieval path and are demonstrated end-to-end in the weather reference** — `create_or_get_rag_corpus()` + `build_rag_retrieval_tool()` together provide an idempotent corpus + tool, ready to plug into an agent.
+2. The architecture designs the semantic layer to integrate with retrieval (`combined_architecture_design.md §4`), so the *intent* is present; the weather ref shows the implementation pattern.
 
 **Limitations on GCP:**
-1. **Blocked by RAG permissions** — retrieval integration could not be validated at all (`[Rishabh]`).
-2. The dummy `SemanticLayerAgent` means the resolved-entity → retrieval path is unwired, so even with permissions, build work remains.
+1. **Blocked by RAG IAM permissions in the Circana pilot project** — a project-config gap, not a platform gap (`[Rishabh]`).
+2. The dummy `SemanticLayerAgent` in the Circana POC (`tools.py:346`) means the resolved-entity → retrieval path is unwired in the deployed code, so even with permissions, the Circana POC requires build work. The weather-ref's `weather_rag.py` is a near-drop-in template.
 
 ---
 
@@ -621,29 +688,31 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 #### 10.b Tool version identifiable
 
-**Status:** Partial Pass
-**Evidence:** `[Rishabh]` "Tool metadata visible but no native tool version attribute exists."
+**POC Status:** Fail — no tool-version metadata at all
+**Platform Status:** Partial Pass — span-attribute pattern shown in reference impl (same shape as 02.c / 10.c)
+**Evidence:** `[Rishabh]` "Tool metadata visible but no native tool version attribute exists." **Reference-implementation evidence:** the weather agent's `start_tool_span` helper (`[Weather: gcp/observability/otel_setup.py:153-157]`) plus per-tool `set_attribute("tool.version", "...")` lines would give tool-version-as-span-attribute lineage in the same shape as the prompt-version pattern. The weather ref applies the pattern for prompts (02.c, 10.c) but not explicitly for tool versions — the discipline is there, just not extended yet.
 
 **Advantages on GCP:**
-1. **Tool metadata is visible** in traces — tool names and arguments are captured, giving a foundation for tool lineage.
-2. The Agent Registry's MCP catalog provides a registration point where tool versions *could* be declared.
+1. **Tool metadata is visible** in traces — tool names and arguments are captured natively, giving a foundation for tool lineage.
+2. **Span-attribute discipline (the same pattern that works for `prompt.id`/`prompt.version`) extends naturally to `tool.version`** — Google's reference implementation shows the helper machinery; declaring tool versions is one constant per tool file.
 
 **Limitations on GCP:**
-1. **No native tool-version attribute exists** — tool lineage requires custom metadata injection, not a platform field (`[Rishabh]`).
-2. MCP tools hosted on Cloud Run are versioned by Cloud Run revision, but linking a Cloud Run revision to an agent-trace tool span is manual correlation.
+1. **No managed tool-version registry → trace linkage exists** — tool lineage relies on the same custom-attribute pattern as prompts (`[Rishabh]`). MCP tools hosted on Cloud Run are versioned by Cloud Run revision, but Cloud Run revision → tool-span correlation requires custom binding.
+2. Neither the Circana POC nor the weather reference explicitly attaches `tool.version` to spans — the pattern is unapplied, even though the helper exists.
 
 #### 10.c Prompt version identifiable
 
-**Status:** Partial Pass
-**Evidence:** `[Rishabh]` "Prompt metadata could be manually instrumented only." `[Meeting notes]` Rishabh: "create version API doesn't version the prompts correctly." `[POC: agent.py:18-67]` Prompts are inline Python strings assembled at agent creation — no version ID, no registry.
+**POC Status:** Fail — Circana POC's prompts are inline strings with no version metadata
+**Platform Status:** Partial Pass — Google's reference impl applies the `prompt.id`/`prompt.version` span-attribute pattern on every tool call
+**Evidence:** `[Rishabh]` "Prompt metadata could be manually instrumented only." `[Meeting notes]` Rishabh: "create version API doesn't version the prompts correctly." `[POC: agent.py:18-67]` Prompts are inline Python strings assembled at agent creation — no version ID, no registry. **Reference-implementation evidence:** `[Weather: weather_agent/agent.py:36-37]` declares `PROMPT_ID = "7282778269173153792"` / `PROMPT_VERSION = "1"`; `[Weather: weather_agent/agent.py:70-71, 96-97, 143-144, 169-170]` attach them as `prompt.id` / `prompt.version` span attributes on every tool call. This is the documented pattern, applied with discipline.
 
 **Advantages on GCP:**
-1. Custom prompt IDs **can be attached** as span attributes, so a disciplined team can build prompt lineage manually (`[Rishabh]`).
-2. The dreaming implementation (04.d) shows prompt identifier + prompt version can be carried as custom attributes — the pattern is demonstrated.
+1. **Prompt-version-as-span-attribute is demonstrated working** in Google's reference implementation — `prompt.id`/`prompt.version` set on every span gives queryable prompt lineage today, no managed registry required.
+2. The pattern composes with Reasoning Engine deployment IDs (agent-level version, 10.a), giving an "engine X + prompt Y" lineage tuple per trace.
 
 **Limitations on GCP:**
-1. **No native Prompt Management → trace linkage** — the `create version` API does not correctly version prompts per hands-on testing, and prompt management is disconnected from Cloud Trace (`[Meeting notes]`, `[Rishabh]`).
-2. The POC's prompts are inline strings (`agent.py:18-67`) with no versioning at all — so even the manual-instrumentation pattern wasn't applied in the POC.
+1. **No managed Prompt Management → trace binding exists** — Vertex AI Prompt Management is disconnected from Cloud Trace, and the `create version` API does not version prompts correctly per hands-on testing (`[Meeting notes]`, `[Rishabh]`). The platform capability is "manual span attributes"; there is no managed equivalent yet.
+2. The Circana POC does **not** apply the pattern — its prompts are inline strings with no version metadata at all (`[POC: agent.py:18-67]`). Adopting the weather-ref pattern is a one-file change.
 
 #### 10.d Skill identifier visible
 
@@ -677,17 +746,20 @@ Circana's workloads are not monolithic. The right cloud decision differs by laye
 
 **Pass condition:** Pilot can be promoted from non-PROD to PROD with repeatable configuration and rollback path.
 
+**Aggregate verdict:** **Partial Pass** — repeatable in principle, friction-laden in practice. Individual sub-criteria pass mechanically, but the 10 documented deployment gotchas, the manual scripting (not managed CI/CD), the orphaned-engine accumulation, and the env-var drift (`us` vs `us-central1`) collectively make this more "Partial" than "Strong" for a Circana audience evaluating production readiness.
+
 #### 11.a Promotion path exists from non-PROD to PROD
 
-**Status:** Partial Pass
-**Evidence:** `[Rishabh]` "Promotion possible through repeatable deployments and registration updates." `[Deploy: §5]` `deploy.py` and `deploy_mcp.py` automate deployment; `.env` holds resource names. `[Deploy: §13 gotcha 4]` `LOCATION=us` vs `us-central1` mismatch shows environment config is error-prone.
+**POC Status:** Partial Pass
+**Platform Status:** Partial Pass — weather reference shows graceful-degradation flags but deployment is still manual scripting
+**Evidence:** `[Rishabh]` "Promotion possible through repeatable deployments and registration updates." `[Deploy: §5]` `deploy.py` and `deploy_mcp.py` automate deployment; `.env` holds resource names. `[Deploy: §13 gotcha 4]` `LOCATION=us` vs `us-central1` mismatch shows environment config is error-prone. **Reference-implementation evidence:** `[Weather: deploy_agent_engine.py:69-91]` ships `--no-firestore` and `--no-custom-sa` graceful-degradation flags explicitly for "deploy when corp Org Policy blocks Firestore and/or IAM bindings" — recognition that real GCP projects have Org Policy friction, with a documented way to ship a partial-but-working deploy and re-enable features later.
 
 **Advantages on GCP:**
-1. **Promotion is achievable** through repeatable `deploy.py` runs and Agent Registry updates — the deployment scripts are parameterized by `.env`.
-2. The `setup_gcp.sh` one-time script makes bootstrapping a new environment straightforward.
+1. **Promotion is achievable** through repeatable `deploy.py` runs and Agent Registry updates — the deployment scripts are parameterized by `.env`. The weather reference shows the disciplined version: explicit graceful-degradation flags for Org-Policy-blocked features, with a documented "re-enable later" path.
+2. The `setup_gcp.sh` one-time script (Circana POC) and `setup_service_account.ps1` (weather ref) make bootstrapping a new environment straightforward.
 
 **Limitations on GCP:**
-1. Promotion is **manual scripting**, not a managed CI/CD pipeline — there is no native "promote engine to PROD" button; it's redeploy-and-update-`.env`.
+1. Promotion is **manual scripting**, not a managed CI/CD pipeline — there is no native "promote engine to PROD" button in either implementation; it's redeploy-and-update-`.env`.
 2. Environment config friction (the `us` vs `us-central1` gotcha) shows that environment parity is not enforced by the platform — it relies on operator discipline.
 
 #### 11.b Configuration is repeatable
@@ -792,30 +864,35 @@ For a **marketer-facing HITL portal** — e.g., a "review attribution results, e
 
 ## 7. Summary Scorecard
 
-| # | Section | Sub-criteria | GCP strengths (grounded) | GCP weaknesses (grounded) |
-|---|---|---|---|---|
-| 01 | Chat host & MCP apps | 4 | A2UI widget rendering; native GenAI spans; persona-as-tool observable | MCP not visible in trace; no chunk-streaming/TTFT; no multimodal in `stream_query`; tracing not default |
-| 02 | Prompt orchestration | 3 | Orchestration steps fully visible as span tree; phase-state-machine enforceable | No native prompt→trace linkage; `create version` API broken; LLM-routed (non-deterministic); mock MCPs only |
-| 03 | Supervisor flow | 4 | Parallel spans observable; decoy interception works; A2A + MCP both supported as patterns | Custom-code routing not platform primitives; MCP↔A2A interop unproven; `_MOCK_STATE` coordination; A2A trace propagation unconfirmed |
-| 04 | Memory | 5 | Short-term works; custom dreaming traceable; Firestore/Memory Bank paths exist | Long-term not implemented (repo name misleading); compaction not native; semantic layer is a dummy; in-memory amnesia risk |
-| 05 | MCP private connectivity | 3 | VPC SC / Serverless VPC Access / PSC primitives exist; Cloud Run IAM auth | Private path not built; MCP is public-authenticated; significant bespoke engineering required (10 gotchas) |
-| 06 | Identity propagation | 3 | SPIFFE agent identity; `header_provider` hook exists; hybrid design documented | Service-account not user identity; Entra federation fake; neither pattern implements e2e identity |
-| 07 | Tracing & observability | 5 | Best-in-class native spans; errors surface in trace+log; I/O visible | MCP events not in trace; no first-class skill abstraction; tracing not default; binary payloads truncated |
-| 08 | Cost & resource isolation | 4 | Project attribution native; reasoning-token visibility; quotas visible | Per-step cost not in dashboards; Agent Engine idle cost unknown; batch-scale cost untested |
-| 09 | Ontology & entity resolution | 4 | Entity resolution persists; disambiguation visible; Spanner/Vector Search exist | Ontology not configured; retrieval blocked; IRI resolver non-deterministic; SemanticLayerAgent is dummy |
-| 10 | Governance & lineage | 5 | Agent version (engine ID) traceable; custom attributes flexible; Agent Registry exists | Model Armor **faked** (regex shim); Agent Gateway not configured; no native prompt/tool/skill version; prompt mgmt disconnected |
-| 11 | DevOps | 4 | Deterministic deployments; rollback via old engines; LOCAL_MODE parity; env-var targeting | Manual scripting not managed CI/CD; orphaned engines; env friction (`us` vs `us-central1`); repeatability needed in-place fixes |
+Each row now distinguishes **POC strengths/weaknesses** (what the Circana POC ships) from **platform strengths/weaknesses** (what GCP can do today with documented patterns Google has shipped — primarily the weather-agent reference codebase, Section 2.5). The two often differ. The platform column is the right input to "is GCP the right hyperscaler"; the POC column is the right input to "is the Google-supplied Circana POC production-ready as-is."
+
+| # | Section | POC strengths | POC weaknesses | Platform-level strengths (weather-ref + POC) | True platform-level gaps |
+|---|---|---|---|---|---|
+| 01 | Chat host & MCP apps | A2UI widget rendering; native GenAI spans; persona-as-tool observable | MCP not visible in trace (HTTP fallback); 100-line custom adapter; portal doesn't stream | A2UI strong; standard `MCPToolset` stdio in weather ref; per-tool spans | No multimodal binary via `stream_query`; tracing not default; TTFT chunk-event claim needs re-test (weather README vs. Rishabh) |
+| 02 | Prompt orchestration | Orchestration steps visible; phase-state-machine enforceable | No prompt-version metadata at all; mock MCPs only; LLM-routed (non-deterministic) | Prompt-version-as-span-attribute pattern shown in weather ref | No managed Prompt Management → trace binding |
+| 03 | Supervisor flow | Parallel spans observable; decoy interception works | Custom AGENT_URLS routing; `_MOCK_STATE` coordination; no A2A trace context | A2A trace-context propagation (W3C + `gen_ai.conversation.id`) shown in weather ref | Native single-trace-id across A2A awaits Reasoning Engine roadmap |
+| 04 | Memory | Short-term works; custom dreaming traceable | `InMemoryMemoryService` in deployed code; long-term not implemented; semantic layer is dummy | Firestore session/memory is default in weather ref; durable long-term Firestore pattern shown | Managed Gemini Memory Bank unwired in both; compaction not a native primitive |
+| 05 | MCP private connectivity | Cloud Run IAM auth works | MCP is public-authenticated; 100-line custom adapter; 10 deployment gotchas | Standard `MCPToolset` is not bespoke; VPC SC / PSC primitives exist | Private MCP path unbuilt in both; standard pattern's actual viability in Reasoning Engine container is contested (Section 01.a) |
+| 06 | Identity propagation | `header_provider` hook exists | Default Vertex SA, not per-agent SPIFFE; Entra federation fake | Per-agent dedicated runtime SAs (AGENT_IDENTITY) demonstrated in weather ref with least-privilege bindings | End-user identity propagation (Entra → JWT → MCP) unbuilt in both |
+| 07 | Tracing & observability | Best-in-class native spans; errors surface in trace+log; I/O visible | MCP events not in POC's trace path; no per-tool span discipline | OTel pipeline + per-tool spans + multi-agent topology demonstrated in weather ref | Binary payloads truncated; tracing not default; TTFT contested |
+| 08 | Cost & resource isolation | Project attribution native; reasoning-token visibility; quotas visible | Per-step cost not in default dashboards | Same as POC — weather ref does not test batch either | Agent Engine idle cost unknown; batch-scale cost untested |
+| 09 | Ontology & entity resolution | Entity resolution persists in session; disambiguation visible | Ontology not configured; SemanticLayerAgent is dummy; IRI resolver non-deterministic | Vertex AI RAG corpus + retrieval tool fully demonstrated in weather ref | Ontology layer / knowledge graph unbuilt in both |
+| 10 | Governance & lineage | Agent version (engine ID) traceable | Model Armor **faked** (regex shim); no prompt/tool version metadata; Agent Gateway not configured | Per-span `prompt.id`/`prompt.version` pattern shown in weather ref; per-tool span helper available | Real in-agent Model Armor punted to gateway even in weather ref; Agent Gateway unbuilt in both; no managed prompt/tool registry → trace binding |
+| 11 | DevOps | Deterministic deployments; rollback via old engines; LOCAL_MODE parity; env-var targeting | Manual scripting not managed CI/CD; orphaned engines; env friction (`us` vs `us-central1`); 10 in-place fixes needed | Weather ref's `--no-firestore` / `--no-custom-sa` graceful-degradation flags show good ops discipline | Still manual scripting in both; no managed promotion pipeline |
 
 ---
 
 ## 8. Key Takeaways for Circana
 
-1. **GCP is a strong candidate for the conversational HITL portal layer** — A2UI, A2A, Agent Engine, and Cloud Trace are a cohesive, genuinely impressive stack for marketer-facing interactive agents. The POCs prove the *capability*.
-2. **GCP is unproven for Circana's batch workloads** — the #1 risk. No batch-scale, no cost-at-scale, no scale-to-zero evidence. Agent Engine is conversational-runtime-shaped. **Do not let the portal demo substitute for load/cost testing at 50K–1M UPCs.**
-3. **Several "showcased" capabilities are faked or unwired in the deployed POC** — most critically Model Armor (local regex shim, `tools.py:287-317`) and long-term memory (repo name says `longTermMemory`, code uses `InMemoryMemoryService`). README claims diverge from deployed code. This is not fraud — it's a pilot — but it means **capability claims must be re-validated against real services before being quoted to Circana.**
-4. **Governance is the weakest area** (Section 10) — Model Armor, Agent Gateway, prompt/tool/skill/policy lineage are all unconfigured or broken. For Circana's governance asks (Denesh's meeting-notes criteria: "who is accessing my agents? guardrails? LLM interception?"), the pilot provides **no evidence** and one actively misleading signal (the regex shim).
-5. **Private connectivity and end-to-end identity are not met** (Sections 05–06) — the MCP server is public-authenticated, and user identity does not reach the tool call. Both are build-work, not out-of-the-box.
-6. **The right architectural framing is three layers** (Section 3): LangGraph for batch + Emiri API orchestration (cloud-agnostic, Azure OpenAI for LLM); GCP for the conversational portal layer if Circana chooses GCP for that surface; runtime/models decided separately. **Don't pick one framework for all three.**
+1. **GCP is a strong candidate for the conversational HITL portal layer** — A2UI, A2A, Agent Engine, and Cloud Trace are a cohesive, genuinely impressive stack for marketer-facing interactive agents. The POCs prove the *capability*, and the weather reference codebase (Section 2.5) shows the platform ceiling is meaningfully higher than the Circana POC alone displays.
+2. **GCP is unproven for Circana's batch workloads** — the #1 risk. No batch-scale, no cost-at-scale, no scale-to-zero evidence in either the Circana POC or the weather reference. Agent Engine is conversational-runtime-shaped. **Do not let the portal demo substitute for load/cost testing at 50K–1M UPCs.**
+3. **Distinguish POC implementation gaps from platform gaps** (Section 2.5 + Section 7 scorecard). Most of the Circana POC's weaknesses — `InMemoryMemoryService` instead of Firestore, default service account instead of per-agent AGENT_IDENTITY, no prompt-version metadata, custom 100-line MCP adapter, no A2A trace propagation, no per-tool span discipline, dummy `SemanticLayerAgent` — are **implementation choices Google's pilot team made**, not platform limits. The weather-agent reference codebase implements all of these with documented patterns. Quoting Circana the POC's gaps as "platform gaps" would understate GCP.
+4. **The true platform-level gaps that remain after weather-ref evidence** are: (a) real in-agent Model Armor (even the weather README punts to "apply at the Apigee/Agent Gateway layer"), (b) end-user identity propagation from Entra ID through to MCP tool calls, (c) multimodal binary attachments through `stream_query`, (d) batch / cost-at-scale, and (e) deterministic graph routing as a platform primitive. These are the gaps that should actually drive a hyperscaler decision — they apply to GCP-the-platform, not just to the Circana POC.
+5. **Several "showcased" capabilities are faked or unwired in the deployed Circana POC** — most critically Model Armor (local regex shim, `tools.py:287-317`) and long-term memory (repo name says `longTermMemory`, code uses `InMemoryMemoryService`). README claims diverge from deployed code. This is not fraud — it's a pilot — but it means **capability claims must be re-validated against real services before being quoted to Circana.** The weather reference's own admissions (Model Armor punted to gateway, attachments are description strings not bytes) provide a useful sanity check on what the platform truly delivers in-agent vs. via decoupled infrastructure.
+6. **Governance is the weakest area** (Section 10) — in-agent Model Armor wiring is missing in both implementations; Agent Gateway is unconfigured in both; prompt/tool/skill/policy lineage relies on the manual span-attribute pattern even in Google's reference. For Circana's governance asks (Denesh's meeting-notes criteria: "who is accessing my agents? guardrails? LLM interception?"), GCP requires deliberate build work on top of whatever the POC ships.
+7. **Private connectivity and end-to-end user identity are real platform-build work** (Sections 05–06) — unbuilt in both the Circana POC and the weather reference. Both require deliberate engineering on top of any GCP deployment.
+8. **The right architectural framing is three layers** (Section 3): LangGraph for batch + Emiri API orchestration (cloud-agnostic, Azure OpenAI for LLM); GCP for the conversational portal layer if Circana chooses GCP for that surface; runtime/models decided separately. **Don't pick one framework for all three.**
+9. **The two highest-priority re-tests before quoting verdicts** are: (a) whether `MCPToolset` with `npx`-stdio actually works in the deployed Reasoning Engine container (Section 01.a — direct contradiction between weather reference's declared pattern and Rishabh's "lacks Node.js" finding), and (b) whether chunk-arrival span events / TTFT are computable as the weather README claims (Section 01.b — direct contradiction with Rishabh's "no TTFT" finding). One of each pair is wrong; the verdict shape on Sections 01.a and 01.b depends on which.
 
 ---
 
@@ -824,9 +901,18 @@ For a **marketer-facing HITL portal** — e.g., a "review attribution results, e
 | Source | Path | Used for |
 |---|---|---|
 | Meeting notes | `docs/meetings/meeting_20260626.md` | Evaluation ask, methodology, batch-scale concern, prompt-mgmt finding |
-| Rishabh Expanded report | `docs/rishabh/GCP_Hyperscaler_Evaluation_Report_Expanded.docx.md` | Grounded findings + trace IDs for ~7 criteria |
+| Rishabh Expanded report | `docs/rishabh/GCP_Hyperscaler_Evaluation_Report_Expanded.docx.md` | Grounded findings + trace IDs for ~7 criteria — tested against the **weather-agent reference codebase**, not the Circana POC (see Section 2.5) |
 | Rishabh Full report | `docs/rishabh/GCP_Hyperscaler_Evaluation_Full_Report.docx.md` | Section structure (templated; not used as evidence) |
 | Deployment guide | `docs/deployment/DEPLOYMENT_GUIDE.md` | Hands-on deployment findings, 10 gotchas, live resource IDs, IAM friction |
+| **Weather agent reference codebase** | `weather_agent_codebase/` | Platform-capability ceiling: Firestore session/memory by default, per-agent dedicated SAs, per-tool span instrumentation with `prompt.id`/`prompt.version`, W3C + `gen_ai.conversation.id` propagation across A2A, native `MCPToolset` stdio, Vertex AI RAG corpus + retrieval tool |
+| Weather agent README | `weather_agent_codebase/README.md` | TTFT-via-span-events claim, attachment-via-GCS-content_ref claim, multi-agent topology pattern, Model-Armor-at-the-gateway admission |
+| Weather agent OTel setup | `weather_agent_codebase/gcp/observability/otel_setup.py` | Cloud Trace + Cloud Monitoring exporters; `start_tool_span` / `start_llm_span` GenAI semconv helpers |
+| Weather A2A context propagation | `weather_agent_codebase/gcp/observability/context_propagation.py` | W3C `traceparent` injection + `gen_ai.conversation.id` belt-and-suspenders cross-agent correlation |
+| Weather Firestore services | `weather_agent_codebase/gcp/services/firestore_services.py` | Native-first + custom-fallback `FirestoreSessionService` / `FirestoreMemoryService` with documented compaction hook |
+| Weather RAG retrieval | `weather_agent_codebase/gcp/retrieval/weather_rag.py` | Vertex AI RAG corpus provisioning + `VertexAiRagRetrieval` ADK tool wiring |
+| Weather deploy script | `weather_agent_codebase/deploy_agent_engine.py` | Default `enable_tracing=True`, Firestore-by-default with `--no-firestore` escape hatch, per-agent dedicated SA with `--no-custom-sa` escape hatch |
+| Weather agent definition | `weather_agent_codebase/weather_agent/agent.py` | `PROMPT_ID`/`PROMPT_VERSION` on every span; `MCPToolset` via npx stdio; persona-as-tool; dreaming-as-tool |
+| Weather host agent | `weather_agent_codebase/host_agent/agent.py` | W3C-headers + conversation-id outbound A2A pattern |
 | POC gap analysis | `google_repos/.../gap_analysis.md` | Google's own admitted gaps B1–B6 |
 | POC README | `google_repos/.../README.md` | Architecture claims, A2UI/A2A, Model Armor *claims*, deployment steps |
 | POC combined architecture | `google_repos/.../architecture/combined_architecture_design.md` | Topology, hybrid deployment design, identity federation design |
@@ -851,4 +937,6 @@ For a **marketer-facing HITL portal** — e.g., a "review attribution results, e
 
 ---
 
-*Document version: 1.0 — June 26, 2026. Grounded in hands-on deployment of the Google-supplied Circana POCs to Blackstraw's GCP environment, Rishabh Mendiratta's parallel hands-on testing, the POCs' own gap analysis, and direct source-code review. Inferred/extrapolated points are marked `[Inferred]`. This document is the AI-synthesis/polish phase applied to already-grounded hands-on material, per the engagement methodology discussed with Denesh Kumar Mani.*
+*Document version: 1.1 — June 26, 2026. Grounded in hands-on deployment of the Google-supplied Circana POCs to Blackstraw's GCP environment, Rishabh Mendiratta's parallel hands-on testing against the `weather_agent_codebase/` reference implementation, the POCs' own gap analysis, and direct source-code review of both the Circana POCs and the weather reference codebase. Inferred/extrapolated points are marked `[Inferred]`. This document is the AI-synthesis/polish phase applied to already-grounded hands-on material, per the engagement methodology discussed with Denesh Kumar Mani.*
+
+*v1.1 changelog: Added Section 2.5 disclosing that Rishabh's hands-on testing was performed against the weather-agent reference codebase, not the Circana POC. Split verdicts into POC-level and Platform-level columns throughout. Revised verdicts on Sections 01.a, 01.b, 02.c, 03.d, 04.a, 04.b, 04.e, 05.c, 06.a, 07.c, 09.d, 10.b, 10.c, 11 to reflect the platform-capability ceiling demonstrated by Google's reference implementation. Updated Sections 1, 7, and 8 (executive summary, scorecard, key takeaways) and Appendix A (added weather reference codebase as primary evidence source). Flagged two open contradictions between Rishabh's findings and the weather README (MCP-via-npx-stdio in Reasoning Engine, TTFT-via-span-events) as the highest-priority re-tests.*
