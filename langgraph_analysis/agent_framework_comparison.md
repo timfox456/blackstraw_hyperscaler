@@ -1,9 +1,11 @@
 # Agent Framework Comparison: LangGraph vs. Hyperscaler Frameworks
 
-**Date:** June 2026 (updated June 24, 2026)  
+**Date:** June 2026 (updated June 26, 2026 — v3.0 with GCP POC hands-on findings)  
 **Requested by:** Pierre Abs (Circana), via Denesh Kumar Mani  
 **Prepared by:** Tim Fox, Blackstraw team  
 **Purpose:** Support Circana’s hyperscaler evaluation with a feature-level comparison of agent orchestration frameworks.
+
+> **v3.0 changelog:** Refreshed the **Google ADK** column and added a new **"GCP POC hands-on findings"** section based on deploying the two Google-supplied Circana POCs (`a2a_MCP_a2ui_agentengine_demo_session_longTermMemory` and `a2a_a2ui_on_prem`) to Blackstraw's GCP environment and reviewing the deployed source code. Several README claims were found to diverge from deployed code (Model Armor is a local regex shim; long-term memory is not implemented despite the repo name; MCP routing uses a custom HTTP adapter, not the Agent Registry). These findings sharpen the ADK assessment below. See the companion document `docs/my_outputs/GCP_Evaluation_Circana_UseCase.md` for the full GCP platform evaluation.
 
 **Contexts covered:**
 
@@ -45,7 +47,7 @@ Denesh also asked to include **Microsoft Semantic Kernel**. Semantic Kernel is i
 
 | Dimension | **LangGraph** | **Google ADK** | **Microsoft MAF** | **AWS Strands** |
 |---|---|---|---|---|
-| **Maturity (hands-on)** | Production-ready, widely adopted | Preview-era pain points in Circana demo; ADK 2.0 evolving | MAF 1.0 GA (Apr 2026); early production adoption | Strands 1.0 GA; AWS-internal first |
+| **Maturity (hands-on)** | Production-ready, widely adopted | Preview-era pain points in Circana demo; ADK 2.0 evolving. **v3.0 POC finding:** deployed code diverges from README claims (Model Armor is a regex shim, long-term memory not implemented, MCP uses custom HTTP adapter) — capability claims need re-validation against real services | MAF 1.0 GA (Apr 2026); early production adoption | Strands 1.0 GA; AWS-internal first |
 | **Vendor lock-in** | None — runs anywhere | High — optimized for Vertex AI / Agent Engine | High — tied to Azure AI Foundry | High — tied to Amazon Bedrock |
 | **Blackstraw attribution batch** | ★★★★★ | ★★☆☆☆ | ★★☆☆☆ | ★★☆☆☆ |
 | **Emiri API integration** (entity resolution, LD Advantage) | ★★★★★ | ★★☆☆☆ | ★★★☆☆ | ★★☆☆☆ |
@@ -84,18 +86,18 @@ If Circana standardizes on one hyperscaler for **LLM runtime only**, pair LangGr
 | **Multi-agent** | ● subgraphs, supervisor patterns | ● hierarchies, Task API, A2A | ● native multi-agent | ◐ multi-agent (legacy) | ● Swarm/Graph/A2A |
 | **Parallelism** | ● native fan-out/fan-in | ◐ parallel via ThreadPoolExecutor | ◐ limited | ◐ varies | ◐ sequential tool calls (Graph mode differs) |
 | **Batch processing** | ● map pipeline nodes to graph nodes | ○ conversational turns | ○ conversational | ○ | ○ single tool-call loops |
-| **State management** | ● typed state (TypedDict), reducers | Session service (in-mem / Firestore) | ● session-based state (in-mem / Cosmos) | ◐ kernel memory/context | ◐ SessionManager (DynamoDB) |
-| **Checkpointing / durable execution** | ● first-class (Postgres, etc.) | ◐ workflow state; Agent Engine gaps noted | ● long-running + HITL scenarios | ◐ less graph-native | ◐ session persistence; less graph-grade |
+| **State management** | ● typed state (TypedDict), reducers | Session service (in-mem / Firestore). **v3.0:** deployed POC uses `InMemoryMemoryService` — README warns it doesn't survive worker restarts; Firestore migration documented but not implemented | ● session-based state (in-mem / Cosmos) | ◐ kernel memory/context | ◐ SessionManager (DynamoDB) |
+| **Checkpointing / durable execution** | ● first-class (Postgres, etc.) | ◐ workflow state; Agent Engine gaps noted. **v3.0:** no scale-to-zero story for 4 always-on engines; batch-durability untested | ● long-running + HITL scenarios | ◐ less graph-native | ◐ session persistence; less graph-grade |
 | **Human-in-the-loop** | ● `interrupt_before` / `interrupt_after` | ◐ custom (A2UI blocks, suspend execution) | ◐ custom (manual checkpoint) | ◐ possible, not graph-native | ◐ hooks/steering; tool interception |
 | **Tool ecosystem** | LangChain tools + custom | `FunctionTool`, OpenAPI, Google integrations | Plugins → tools; MCP | SK plugins/functions | ● `@tool`, MCP, A2A |
-| **MCP support** | ● native MCP client | ● native MCP + Agent Registry | ● MCP + A2A | ◐ evolving | ● native MCP |
+| **MCP support** | ● native MCP client | ◐ native MCP + Agent Registry in theory; **v3.0:** deployed POC uses a custom 100-line HTTP-fallback adapter (`tools.py:87-188`), MCP-in-trace not achieved, no Node.js/SSE in Reasoning Engine | ● MCP + A2A | ◐ evolving | ● native MCP |
 | **A2A (agent-to-agent)** | ◐ community / custom | ● Task API, A2A | ● A2A + MCP | ○ | ● A2A in 1.0 |
 | **Model agnosticism** | ● any LLM via LangChain | ● Gemini-first; others via custom | ● Azure OpenAI + multi-provider | ● multi-provider | ● Bedrock-first; many providers |
 | **Vector store** | ● any (Chroma, Pinecone, FAISS, …) | Vertex AI Vector Search first-class | Azure AI Search first-class | ◐ via plugins | OpenSearch / Kendra first-class |
-| **Observability** | ● LangSmith / LangFuse / OTel | Cloud Logging / Cloud Trace | ● Azure Monitor / OTel | ◐ OpenTelemetry | ● CloudWatch + X-Ray, hooks |
+| **Observability** | ● LangSmith / LangFuse / OTel | Cloud Logging / Cloud Trace. **v3.0:** best-in-class native GenAI spans, but MCP tool events don't surface in trace (HTTP-fallback path breaks context); no chunk-level streaming/TTFT; tracing not enabled by default | ● Azure Monitor / OTel | ◐ OpenTelemetry | ● CloudWatch + X-Ray, hooks |
 | **Per-node token attribution** | ● native token limits per node | ○ per-turn logs | ○ per-token accounting | ○ | Bedrock token logs |
-| **Deployment** | Self-host, LangGraph Platform/Cloud, K8s | Cloud Run, GKE, Agent Runtime, Agent Engine | Azure Foundry, Functions, containers | Azure / self-host | Lambda, Fargate, Bedrock AgentCore |
-| **Scale-to-zero** | ● LangGraph Platform | ◐ Cloud Run yes; Agent Engine unclear | ● Azure Functions | ◐ | ◐ unclear (Bedrock managed) |
+| **Deployment** | Self-host, LangGraph Platform/Cloud, K8s | Cloud Run, GKE, Agent Runtime, Agent Engine. **v3.0:** deploy worked but required 10 documented gotcha-fixes; orphaned engines accumulate; `LOCATION=us` vs `us-central1` friction | Azure Foundry, Functions, containers | Azure / self-host | Lambda, Fargate, Bedrock AgentCore |
+| **Scale-to-zero** | ● LangGraph Platform | ◐ Cloud Run yes; Agent Engine unclear. **v3.0:** pilot ran 4 always-on engines — no scale-to-zero evidence; idle cost unknown at batch scale | ● Azure Functions | ◐ | ◐ unclear (Bedrock managed) |
 | **Cloud affinity / lock-in** | Low | High on GCP managed path | High on Azure/Microsoft stack | Medium–high | High on AWS managed path |
 | **Languages** | Python (primary), JS | Python, TS, Go, Java, Kotlin | .NET, Python, JS, Java | C#, Python, Java | Python, TypeScript |
 | **Learning curve** | Steeper (graph DSL) | Moderate; improving with 2.0 | Moderate (.NET-friendly) | Moderate (legacy) | Lower for simple agents |
@@ -134,7 +136,7 @@ If Circana standardizes on one hyperscaler for **LLM runtime only**, pair LangGr
 | Feature | LangGraph | Google ADK | Microsoft MAF | AWS Strands |
 |---------|-----------|-----------|---------------|-------------|
 | **Tool definition** | `@tool` decorator (any callable) | `FunctionTool` (any callable) | `KernelFunction` / tools (any callable) | `@tool` decorator |
-| **MCP support** | Native MCP client (any MCP server) | Native MCP client + Agent Registry resolution | MCP client | MCP client |
+| **MCP support** | Native MCP client (any MCP server) | Native MCP client + Agent Registry resolution (v3.0: deployed POC fell back to a custom HTTP adapter — see GCP POC findings) | MCP client | MCP client |
 | **Human-in-the-loop tools** | Native `interrupt` nodes | Custom A2UI widget protocol | Custom | Custom |
 | **Tool parallelism** | Yes (parallel tool calls) | Yes (LLM-driven) | Yes (LLM-driven) | Sequential |
 | **Custom tool protocols** | Any (HTTP, gRPC, stdio) | A2A (JSON-RPC) + MCP | Agent Protocol | Bedrock tool schema |
@@ -405,19 +407,41 @@ Use a **three-layer decision**:
 
 ---
 
-## Blackstraw hands-on findings (Google ADK, Circana retail demo)
+## GCP POC hands-on findings (v3.0 — from deploying the Google-supplied Circana repos)
 
-Relevant data from a detailed evaluation of Google ADK on a similar Circana pipeline (retail multi-agent demo):
+Both Google-supplied POCs were deployed to Blackstraw's GCP project (`gemini-enterprise-app-499621`, `us-central1`) and the deployed source code was reviewed line-by-line. The findings below sharpen the ADK assessment throughout this document. Full deployment details and gotchas are in `docs/deployment/DEPLOYMENT_GUIDE.md`; the full GCP platform evaluation is in `docs/my_outputs/GCP_Evaluation_Circana_UseCase.md`.
 
-| Finding | Implication |
-|---|---|
-| ADK optimized for **conversational HITL portals**, not batch pipelines | Poor fit for Emiri batch without workarounds |
-| `InMemoryMemoryService` **does not survive worker restarts** | Repo explicitly warns about this; risky for production batch |
-| **Agent Engine idle cost** across 4 engines unclear | Demo deploys 4 Reasoning Engines + MCP server; no scale-to-zero story documented |
-| **A2A trace propagation unconfirmed** | Open question whether OTel context propagates across A2A boundaries |
-| **Local dev required bypassing ADK** | Mock local services (Ollama + in-memory session) needed because ADK assumes Vertex AI Agent Engine for real LLM calls |
+### What the POCs actually are
 
-These findings reinforce the recommendation: hyperscaler conversational frameworks are not the right primary fit for Emiri’s batch pipeline. LangGraph (or plain orchestration via Ray + a vector store) better matches the requirements.
+- **`a2a_MCP_a2ui_agentengine_demo_session_longTermMemory`** ("cloud" POC): ADK supervisor + 4 sub-agents on Vertex AI Reasoning Engine + MCP server on Cloud Run + FastAPI portal. A conversational retail-activation portal (pricing → audience sizing → activation → loyalty) with A2UI interactive widgets and A2A delegation. **All MCP tool data is mock** (`_MOCK_STATE` in `tools.py`).
+- **`a2a_a2ui_on_prem`** ("on-prem" POC): A 6-file Python pipeline calling real IRI Liquid Data endpoints for entity resolution + audience sizing, with a Flask portal. Uses `asyncio.gather` for parallel hierarchy/entity resolution and a 10-second polling loop.
+
+### Key findings (README claims vs. deployed code)
+
+| # | Finding | Evidence | Implication for ADK assessment |
+|---|---|---|---|
+| 1 | **Model Armor is a local regex shim, not the managed service** | `tools.py:287-317` `sanitize_content_with_model_armor` checks `ignore previous instructions`, `system override`, CC/SSN regex patterns with Python `re` and raises `ValueError`. The README claims "Model Armor Safety Shield" with a screenshot. | Governance/guardrail capability is **simulated**, not validated. The real Vertex AI Model Armor service exists but was not wired up. Don't quote Model Armor as a proven ADK strength. |
+| 2 | **Long-term memory is not implemented (repo name is misleading)** | Repo is named `..._session_longTermMemory`, but `tools.py:444-446` uses `InMemoryMemoryService`. The README warns "deploying sub-agents to multi-worker or cloud environments requires migrating to Firestore-based memory." The POC's own `gap_analysis.md` lists long-term memory as a gap. | ADK's memory story is **aspirational in the POC**. Firestore/Memory Bank paths exist but are build-work, not consumed. |
+| 3 | **MCP routing uses a custom 100-line tri-fallback adapter, not the Agent Registry** | `tools.py:87-188` `call_mcp_tool` tries: (a) Agent Registry `get_mcp_toolset` (only if `MCP_SERVER_NAME` set), (b) HTTP POST to Cloud Run `/tools/call`, (c) local stdio subprocess. The deployed path is (b) — bespoke HTTP glue. | "Native MCP + Agent Registry" is ◐ not ●. MCP tool events don't surface in the agent trace over the HTTP fallback. |
+| 4 | **MCP cannot run natively in the Reasoning Engine (no Node.js/SSE)** | Rishabh's testing: "Reasoning Engine containers lacked Node.js and public SSE infrastructure required by MCP deployment approaches." | MCP must be a separate Cloud Run service, fragmenting the trace and requiring a custom adapter. |
+| 5 | **Agent Engine has no scale-to-zero story; 4 always-on engines; idle cost unknown** | `deploy.py` deploys 4 Reasoning Engines in parallel; they persist always-on. No batch-scale or cost-at-scale testing was done. Meeting notes: Tim flagged "hundreds of thousands to millions of UPCs" as untested. | ADK/Agent Engine is **conversational-runtime-shaped**. For batch attribution at 50K–1M UPCs, Agent Engine is unproven and likely the wrong shape — Cloud Run jobs / Batch + Vertex AI model calls orchestrated by LangGraph is the better GCP pattern. |
+| 6 | **Routing is LLM-instruction-driven via a custom `send_message_tool`, not platform primitives** | `agent.py:20-41` encodes phases as prose system instructions; `tools.py:329-351` routes via a hardcoded `AGENT_URLS` dict. The POC deliberately bypasses `get_remote_a2a_agent` for local-emulation support. | ADK's supervisor is **non-deterministic, LLM-routed**. The "platform primitives, not our code" bar (spreadsheet §03) is not met by the deployed pattern. Decoy interception (`tools.py:405-408`) is a nice guardrail, though. |
+| 7 | **A2A trace propagation across boundaries is unconfirmed** | A2A routes via GenAI SDK `agent_engines.on_message_send` (`tools.py:487-505`) or `a2a-sdk` HTTP client; MCP is a separate HTTP path. No shared OTel context across the two. | Cross-agent/cross-tool distributed tracing is an open risk. |
+| 8 | **End-user identity does not reach the MCP tool call** | `tools.py:96-110` `get_cloud_run_auth_headers` uses `google.auth.default()` (service account). `gap_analysis.md`: "MCP tool queries the database using a master VM service account, not the logged-in user's identity." Entra federation is "fake session user ID" per gap analysis. | Identity propagation (spreadsheet §06) is not met. The `header_provider` hook exists but isn't used for user identity. |
+| 9 | **Prompt management is disconnected from Cloud Trace; `create version` API broken** | `agent.py:18-67` prompts are inline Python strings (no version ID). Meeting notes: Rishabh — "create version API doesn't version the prompts correctly… prompt management and cloud trace are pretty disconnected." | Prompt lineage (spreadsheet §10.c) is a real platform gap, not a config issue. |
+| 10 | **Deployment worked but required 10 documented gotcha-fixes** | `DEPLOYMENT_GUIDE.md §13`: gcloud PATH, `sys.exit()` crashes, interactive base-image prompts, `LOCATION=us` vs `us-central1`, ADC expiry, IAM `roles/run.admin`+`roles/run.invoker` needed beyond `roles/editor`, Dockerfile renaming, IRI non-determinism, separate venvs. | "No bespoke vendor engineering required" (spreadsheet §05.c) is not met. The platform is workable but not friction-free. |
+| 11 | **A2UI is a genuine differentiator for HITL portals** | `components.py` + `agent.py:43-47`: agents emit `<a2ui-json>` widget schemas that the portal renders as interactive HTML sandboxes (tables, charts, dashboards) with `postMessage` HITL callbacks. Phase suspension/resumption works. | This is ADK's **real strength** — a marketer-facing interactive portal is hard to build from scratch and GCP provides it natively. Validated, not aspirational. |
+| 12 | **Cloud Trace native GenAI spans are best-in-class for conversational observability** | Rishabh's traces (`c726b93c...`, `08b300d5...`, etc.): `invoke_agent`, `call_llm`, `generate_content`, `execute_tool` spans with model metadata + token stats, generated automatically. 15-span trees reconstructible. | For the conversational layer, ADK's observability is excellent. The gap is MCP/batch/scale visibility, not conversational. |
+
+### Net impact on the ADK column in this document
+
+- **Conversational HITL portal strength:** confirmed and strengthened (A2UI, A2A, Cloud Trace) — ADK is a genuine leader here.
+- **Batch / stateful pipeline fit:** weakened — no batch evidence, no scale-to-zero, no cost-at-scale, LLM-routed non-determinism. ADK is the wrong primary fit for Blackstraw's attribution batch (LangGraph remains the recommendation).
+- **MCP integration:** downgraded from ● to ◐ — native in theory, custom-HTTP-adapter in deployed practice; MCP-in-trace not achieved.
+- **Memory:** downgraded — long-term memory is not implemented in the POC despite the repo name.
+- **Governance (Model Armor / Agent Gateway):** downgraded — Model Armor is a regex shim; governance is the weakest area and must be re-validated against real services before quoting as a strength.
+
+The overall recommendation is unchanged: **LangGraph for batch + Emiri API orchestration; ADK only for a future GCP-hosted conversational HITL portal; Azure OpenAI for LLM calls to align with Emiri's existing stack.** The POC validates ADK's conversational-portal capability but does not change the batch-pipeline recommendation.
 
 ---
 
@@ -519,4 +543,4 @@ await agent.run("Process all UPCs and output CSV")
 
 ---
 
-*Document version: 2.1 — June 2026 (added Emiri platform context from internal API docs)*
+*Document version: 3.0 — June 2026 (v3.0: refreshed ADK column and added "GCP POC hands-on findings" section from deploying both Google-supplied Circana POCs to Blackstraw's GCP environment and reviewing deployed source code; v2.1 added Emiri platform context from internal API docs)*
