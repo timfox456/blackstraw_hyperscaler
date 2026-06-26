@@ -1,0 +1,30 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+.venv310/
+env/
+venv/
+ENV/
+
+# Configuration and Secrets
+.env
+
+# Playgrounds & Scratch files
+scratch/
+
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Private client documents
+# (Included for architecture and walkthrough visual assets)
+
+# Logs
+*.log
+
+# Temporary build containers
+Dockerfile

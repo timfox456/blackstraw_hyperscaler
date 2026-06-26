@@ -1,0 +1,32 @@
+# Environment and credentials
+.env
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# Python cache and build outputs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+server.log
+
+# IDE settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp

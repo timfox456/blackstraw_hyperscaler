@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body { 
+            background-color: #0d1117; 
+            color: #c9d1d9; 
+            margin: 0; 
+            padding: 30px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            display: inline-block; 
+        }
+        .container {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        h2 {
+            margin-top: 0;
+            color: #58a6ff;
+            font-weight: 600;
+            border-bottom: 1px solid #21262d;
+            padding-bottom: 10px;
+            font-size: 20px;
+        }
+        .mermaid { 
+            background-color: #161b22; 
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="diagram-container">
+        <h2>Multi-Agent Hybrid System Architecture</h2>
+        <div class="mermaid" id="diagram">
+graph TD
+    subgraph Frontend[Enterprise Chat Console]
+        User[User Chat UI] <--> SV[Supervisor Agent]
+        A2UI[Interactive Side Panel Sandbox] <--> SV
+    end
+
+    subgraph Cloud[Gemini Enterprise Agent Engine Runtime]
+        SV <-->|A2A / GenAI SDK| Semantic[Semantic Layer Agent]
+        SV <-->|A2A / GenAI SDK| Pricing[Price & Assortment Orchestrator]
+        Pricing <-->|A2A| PricingTool[Pricing Opportunities Agent]
+        PricingTool <--> PricingDB[Pricing DB API Tool]
+    end
+
+    subgraph OnPrem[Secure On-Premises Network Runtime]
+        SV <-->|A2A / Secure Egress Tunnel| Activation[Liquid Activate Orchestrator]
+        Activation <--> Build[Build Agent]
+        Activation <--> Size[Size Agent]
+        Build --> BuildMCP[audience-build MCP Server]
+        Size --> SizeMCP[audience-size MCP Server]
+    end
+        </div>
+    </div>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'dark',
+            themeVariables: {
+                background: '#161b22',
+                primaryColor: '#1f6feb',
+                primaryTextColor: '#c9d1d9',
+                lineColor: '#8b949e',
+                actorBkg: '#21262d',
+                actorBorder: '#30363d',
+                noteBkgColor: '#30363d',
+                noteTextColor: '#c9d1d9',
+                signalColor: '#58a6ff',
+                signalTextColor: '#c9d1d9'
+            }
+        });
+    </script>
+</body>
+</html>

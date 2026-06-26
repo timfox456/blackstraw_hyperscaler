@@ -1,0 +1,17 @@
+[
+  {
+    "surfaceUpdate": {
+      "surfaceId": "circana-sizing-dashboard",
+      "components": [
+        {
+          "id": "root",
+          "component": {
+            "WebFrameSrcdoc": {
+              "htmlContent": { "literalString": "<h1>Mock Cache Definition</h1>" }
+            }
+          }
+        }
+      ]
+    }
+  }
+]

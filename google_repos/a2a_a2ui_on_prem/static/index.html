@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Drive Growth with Market Research, Consumer Data, & Industry Analysis | Circana</title>
+  <link rel='preconnect' href='https://fonts.googleapis.com'>
+  <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+  <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap' rel='stylesheet'>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
+  
+  <style>
+    :root {
+      --bg-primary: #f8fafc;       /* Slate 50 */
+      --bg-secondary: #ffffff;     /* White card bg */
+      --bg-tertiary: #f1f5f9;      /* Slate 100 */
+      --border-color: #cbd5e1;     /* Slate 300 */
+      --text-main: #0f172a;        /* Slate 900 */
+      --text-muted: #475569;       /* Slate 600 */
+      --accent-color: #002f6c;     /* Circana Primary Deep Blue */
+      --accent-hover: #001f4d;     /* Circana Darker Blue */
+      --accent-light: #00a4e4;     /* Circana Light Blue */
+      --green-glow: #10b981;
+      --card-radius: 12px;
+      --transition-speed: 0.25s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', 'Inter', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Primary Header (Brand Nav) matching Circana style */
+    .primary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 40px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px 0 rgba(0,0,0,0.03);
+      height: 70px;
+      box-sizing: border-box;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .circana-logo {
+      height: 32px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .brand-title {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      color: #0f172a;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+
+    .brand-dot {
+      color: #7928ca;
+    }
+
+    /* Header search bar */
+    .search-container {
+      flex: 1;
+      max-width: 400px;
+      margin: 0 40px;
+      display: flex;
+    }
+
+    .header-search {
+      width: 100%;
+      background: #f1f5f9;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      color: var(--text-main);
+      padding: 8px 18px;
+      font-family: inherit;
+      font-size: 13px;
+      outline: none;
+      transition: border-color var(--transition-speed);
+    }
+
+    .header-search:focus {
+      border-color: var(--accent-light);
+      background: #ffffff;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 0.85rem;
+    }
+
+    .btn-contact {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .btn-contact:hover {
+      text-decoration: underline;
+    }
+
+    /* Secondary Header (Application Subheader) */
+    .app-subheader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 24px;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: inset 0 -1px 0 0 rgba(0,0,0,0.02);
+      height: 52px;
+      box-sizing: border-box;
+      flex-shrink: 0;
+    }
+
+    .btn-toggle-canvas {
+      background: none;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 5px 10px;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      transition: background var(--transition-speed);
+    }
+
+    .btn-toggle-canvas:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .hub-label {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: rgba(0, 164, 228, 0.06);
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 164, 228, 0.15);
+    }
+
+    .badge-live {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: var(--green-glow);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Thicker loading progress bar with a shimmer animation */
+    .global-progress-bar {
+      height: 8px;
+      width: 100%;
+      background: #e2e8f0;
+      position: relative;
+      display: none;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .global-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-light) 0%, var(--green-glow) 50%, var(--accent-light) 100%);
+      background-size: 200% 100%;
+      animation: progress-shimmer 1.5s infinite linear;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes progress-shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    /* App Workspace wrapper layout */
+    .app-workspace {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Main Content Area */
+    .container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar controls */
+    .sidebar {
+      width: 380px;
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      gap: 20px;
+      overflow-y: auto;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .input-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-field {
+      width: 100%;
+      background-color: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-main);
+      padding: 12px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      transition: border-color var(--transition-speed);
+    }
+
+    .input-field:focus {
+      border-color: var(--accent-light);
+      background-color: #ffffff;
+    }
+
+    textarea.input-field {
+      height: 120px;
+      resize: none;
+      line-height: 1.5;
+    }
+
+    .btn-run {
+      background: linear-gradient(135deg, var(--accent-color), var(--accent-light));
+      border: none;
+      border-radius: 8px;
+      color: white;
+      padding: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity var(--transition-speed), transform 0.1s;
+      box-shadow: 0 4px 12px rgba(0, 47, 108, 0.15);
+    }
+
+    .btn-run:hover {
+      opacity: 0.95;
+    }
+
+    .btn-run:active {
+      transform: scale(0.98);
+    }
+
+    .btn-run:disabled {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Active Agent progress widget */
+    .agent-progress-card {
+      background: rgba(0, 164, 228, 0.06);
+      border: 1px dashed rgba(0, 164, 228, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .agent-progress-sub-block {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #fbbf24;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+      animation: pulse 1.2s infinite;
+      flex-shrink: 0;
+    }
+
+    .pulse-dot.sizing {
+      background-color: var(--green-glow);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(251, 191, 36, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(251, 191, 36, 0);
+      }
+    }
+
+    .progress-desc {
+      font-size: 13px;
+      color: var(--text-main);
+      font-weight: 500;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+
+    /* Output Section split */
+    .display-area {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* Terminal logs panel */
+    .logs-panel {
+      flex: 1;
+      background-color: #0c101a;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 20px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .terminal {
+      flex: 1;
+      padding: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #94a3b8;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .terminal .info { color: #60a5fa; }
+    .terminal .success { color: var(--green-glow); }
+    .terminal .error { color: #f87171; }
+    .terminal .warn { color: #fbbf24; }
+
+    /* A2UI Emulator Panel - Collapsed by default (0px width) */
+    .emulator-panel {
+      width: 0px;
+      background-color: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .emulator-panel.expanded {
+      width: 550px;
+      border-left: 1px solid var(--border-color);
+    }
+
+    .emulator-canvas {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .empty-state {
+      text-align: center;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      color: var(--text-muted);
+      opacity: 0.7;
+    }
+
+    .empty-state h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .empty-state p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    iframe.a2ui-iframe {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      background-color: #1e293b;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    iframe.a2ui-iframe.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Footer styling matching Circana site */
+    .app-footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+      padding: 14px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .footer-solutions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-solutions span {
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .footer-solutions a {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer-solutions a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-color);
+      text-decoration: underline;
+    }
+
+    .footer-links .divider {
+      color: #cbd5e1;
+      margin: 0 4px;
+    }
+
+    /* Loader */
+    .spinner {
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border-left-color: white;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Primary Header matching brand navigation -->
+  <header class="primary-header">
+    <div class="brand">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img src="favicon.svg" alt="Circana" class="circana-logo">
+        <span class="brand-title">Circana<span class="brand-dot">.</span></span>
+      </div>
+    </div>
+
+    <!-- Centered Search Bar -->
+    <div class="search-container">
+      <input type="text" class="header-search" placeholder="Search">
+    </div>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <a href="#" class="btn-contact">Contact Us</a>
+    </div>
+  </header>
+
+  <!-- Secondary Header matching application subheader -->
+  <header class="app-subheader">
+    <div class="brand" style="display:flex; align-items:center; gap:12px;">
+      <button class="btn-toggle-canvas" id="btnToggleCanvas" title="Toggle A2UI Canvas">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+        <span>Toggle Canvas</span>
+      </button>
+      <span class="hub-label">Audience Orchestration Hub</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:20px;">
+      <span class='badge-live'>Live Downstream</span>
+    </div>
+  </header>
+
+  <!-- Global loading progress bar -->
+  <div id="globalProgressBar" class="global-progress-bar">
+    <div id="globalProgressBarFill" class="global-progress-fill"></div>
+  </div>
+
+  <!-- Content split and Workspace -->
+  <div class="app-workspace">
+    <div class='container'>
+      
+      <!-- Sidebar Inputs -->
+      <div class='sidebar'>
+        <div class='input-group'>
+          <label class='input-label'>Downstream Model ID</label>
+          <input id='modelIdInput' class='input-field' type='text' value='7920'>
+        </div>
+
+        <div class='input-group'>
+          <label class='input-label'>Natural Language Request</label>
+          <textarea id='queryInput' class='input-field'>Create a verified audience sizing Dollar Sales > 0 for COCA COLA CO LOW CALORIE SOFT DRINKS in the latest 13 weeks</textarea>
+        </div>
+
+        <button id='runBtn' class='btn-run'>
+          <span id='btnText'>Run A2A Turn</span>
+        </button>
+
+        <!-- Active Agent visual tracker -->
+        <div id='agentProgressCard' class='agent-progress-card' style='display: none;'>
+          <!-- Dynamic sub-blocks are dynamically appended here by js -->
+        </div>
+      </div>
+
+      <!-- Displays split -->
+      <div class='display-area'>
+        
+        <!-- Terminal logs -->
+        <div class='logs-panel'>
+          <div class='panel-header'>
+            <span>EXECUTION TRACE LOGS</span>
+            <span id='statusText' style='color: var(--text-muted);'>IDLE</span>
+          </div>
+          <div id='terminal' class='terminal'>Enter query and run activation turn. Logs will be dynamically piped here...</div>
+        </div>
+
+        <!-- A2UI Canvas (Toggled off by default) -->
+        <div id="emulatorPanel" class="emulator-panel">
+          <div class='panel-header'>
+            <span>A2UI RENDERING CANVAS</span>
+          </div>
+          <div id='emulatorCanvas' class='emulator-canvas'>
+            <div id='emptyState' class='empty-state'>
+              <svg fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'></path></svg>
+              <h3>A2UI Canvas Sandbox</h3>
+              <p>Once the agent completes execution, the declarative A2UI JSON payload will be compiled and rendered here as an interactive widget.</p>
+            </div>
+            <iframe id='a2uiIframe' class='a2ui-iframe'></iframe>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Solution Footer -->
+    <footer class="app-footer">
+      <div class="footer-solutions">
+        <span>View all solutions that</span>
+        <a href="#">Measure Demand</a>
+        <a href="#">Accelerate Demand</a>
+      </div>
+      <div class="footer-links">
+        <span>© 2026 Circana</span>
+        <span class="divider">|</span>
+        <a href="#">Terms of Use</a>
+        <span class="divider">|</span>
+        <a href="#">Privacy Notices</a>
+        <span class="divider">|</span>
+        <a href="#">Modern Slavery Statement</a>
+        <span class="divider">|</span>
+        <a href="#" class="privacy-choices">
+          <svg width="24" height="12" viewBox="0 0 24 12" fill="none" style="vertical-align: middle; margin-right: 4px;">
+            <rect width="24" height="12" rx="6" fill="#0072EC"/>
+            <circle cx="6" cy="6" r="4" fill="white"/>
+            <path d="M12 4L16 8M16 4L12 8" stroke="white" stroke-width="1.2"/>
+          </svg>
+          Your Privacy Choices
+        </a>
+        <span class="divider">|</span>
+        <a href="#">Cookie Settings</a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const runBtn = document.getElementById('runBtn');
+    const queryInput = document.getElementById('queryInput');
+    const modelIdInput = document.getElementById('modelIdInput');
+    const terminal = document.getElementById('terminal');
+    const statusText = document.getElementById('statusText');
+    const emptyState = document.getElementById('emptyState');
+    const a2uiIframe = document.getElementById('a2uiIframe');
+    const emulatorPanel = document.getElementById('emulatorPanel');
+    const btnToggleCanvas = document.getElementById('btnToggleCanvas');
+    
+    // Global Progress elements
+    const globalProgressBar = document.getElementById('globalProgressBar');
+    const globalProgressBarFill = document.getElementById('globalProgressBarFill');
+
+    // Active progress trackers
+    const agentProgressCard = document.getElementById('agentProgressCard');
+
+    function appendLog(text, type='info') {
+      const span = document.createElement('span');
+      span.className = type;
+      span.textContent = text + '\n';
+      terminal.appendChild(span);
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    // Manual canvas toggle button
+    btnToggleCanvas.addEventListener('click', () => {
+      emulatorPanel.classList.toggle('expanded');
+    });
+
+    runBtn.addEventListener('click', () => {
+      const query = queryInput.value.trim();
+      const modelId = modelIdInput.value.trim();
+
+      if (!query) return;
+
+      // Reset state
+      terminal.textContent = '';
+      statusText.textContent = 'RUNNING';
+      statusText.style.color = '#fbbf24';
+      emptyState.style.display = 'flex';
+      
+      // Collapse emulator panel on run start
+      emulatorPanel.classList.remove('expanded');
+      a2uiIframe.classList.remove('visible');
+      a2uiIframe.style.display = 'none';
+
+      runBtn.disabled = true;
+      runBtn.innerHTML = '<span class="spinner"></span> <span>Running Orchestration...</span>';
+
+      // Reset and display global progress bar
+      globalProgressBar.style.display = 'block';
+      globalProgressBarFill.style.width = '10%';
+
+      // Reset active progress card
+      agentProgressCard.innerHTML = `
+        <div class="agent-progress-sub-block">
+          <div class="progress-header">
+            <span class="pulse-dot"></span>
+            <span>Liquid Activation Orchestrator</span>
+          </div>
+          <div class="progress-desc">Parsing user natural language request...</div>
+        </div>
+      `;
+      agentProgressCard.style.display = 'flex';
+
+      appendLog(`[SYSTEM] Initializing stream subscription for model ID ${modelId}...`, 'info');
+      
+      // Open EventSource stream subscription
+      const streamUrl = `/api/run?query=${encodeURIComponent(query)}&model_id=${encodeURIComponent(modelId)}`;
+      const eventSource = new EventSource(streamUrl);
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'status') {
+            // Clear previous sub-blocks
+            agentProgressCard.innerHTML = '';
+            
+            if (Array.isArray(data.agent)) {
+              data.agent.forEach((agentName, idx) => {
+                const descText = data.desc[idx] || '';
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'agent-progress-sub-block';
+                if (idx < data.agent.length - 1) {
+                  itemDiv.style.marginBottom = '12px';
+                  itemDiv.style.borderBottom = '1px dashed rgba(0, 164, 228, 0.15)';
+                  itemDiv.style.paddingBottom = '10px';
+                }
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'progress-header';
+                
+                const dotSpan = document.createElement('span');
+                dotSpan.className = 'pulse-dot';
+                
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = agentName;
+                
+                headerDiv.appendChild(dotSpan);
+                headerDiv.appendChild(nameSpan);
+                
+                const descDiv = document.createElement('div');
+                descDiv.className = 'progress-desc';
+                descDiv.textContent = descText;
+                
+                itemDiv.appendChild(headerDiv);
+                itemDiv.appendChild(descDiv);
+                agentProgressCard.appendChild(itemDiv);
+              });
+              
+              // Set progress bar depending on phase
+              if (data.agent[0].includes('Hierarchy')) {
+                globalProgressBarFill.style.width = '35%';
+              } else if (data.agent[0].includes('Entity')) {
+                globalProgressBarFill.style.width = '60%';
+              }
+            } else {
+              // Single agent
+              const headerDiv = document.createElement('div');
+              headerDiv.className = 'progress-header';
+              
+              const dotSpan = document.createElement('span');
+              dotSpan.className = 'pulse-dot';
+              if (data.agent.includes('Polling') || data.agent.includes('Sizing') || data.agent.includes('Status')) {
+                dotSpan.classList.add('sizing');
+              }
+              
+              const nameSpan = document.createElement('span');
+              nameSpan.textContent = data.agent;
+              
+              headerDiv.appendChild(dotSpan);
+              headerDiv.appendChild(nameSpan);
+              
+              const descDiv = document.createElement('div');
+              descDiv.className = 'progress-desc';
+              descDiv.textContent = data.desc;
+              
+              const itemDiv = document.createElement('div');
+              itemDiv.className = 'agent-progress-sub-block';
+              itemDiv.appendChild(headerDiv);
+              itemDiv.appendChild(descDiv);
+              agentProgressCard.appendChild(itemDiv);
+
+              // Set progress bar depending on agent
+              if (data.agent.includes('Metadata')) {
+                globalProgressBarFill.style.width = '75%';
+              } else if (data.agent.includes('Sizing') || data.agent.includes('Status')) {
+                globalProgressBarFill.style.width = '88%';
+              }
+            }
+          } 
+          else if (data.type === 'log') {
+            const log = data.message;
+            let logType = 'info';
+            if (log.includes('[ERROR]')) logType = 'error';
+            else if (log.includes('[WARNING]')) logType = 'warn';
+            else if (log.includes('successfully') || log.includes('COMPLETED')) logType = 'success';
+            appendLog(log, logType);
+          } 
+          else if (data.type === 'result') {
+            // Terminate EventSource
+            eventSource.close();
+            runBtn.disabled = false;
+            runBtn.innerHTML = 'Run A2A Turn';
+
+            // Complete progress bar
+            globalProgressBarFill.style.width = '100%';
+            setTimeout(() => {
+              globalProgressBar.style.display = 'none';
+            }, 800);
+
+            if (!data.success) {
+              throw new Error(data.error || 'Server execution failed.');
+            }
+
+            appendLog(`[SYSTEM] Sizing Batch created successfully. Batch ID: ${data.batch_id}`, 'success');
+            statusText.textContent = 'SUCCESS';
+            statusText.style.color = 'var(--green-glow)';
+
+            // Hide agent card on success
+            agentProgressCard.style.display = 'none';
+
+            // Extract and parse A2UI JSON payload
+            const cleanA2uiStr = data.a2ui_json.replace('<a2ui-json>\n', '').replace('\n</a2ui-json>', '');
+            const a2uiArray = JSON.parse(cleanA2uiStr);
+
+            let htmlContent = '';
+            let height = 550;
+
+            for (const action of a2uiArray) {
+              if (action.surfaceUpdate && action.surfaceUpdate.components) {
+                for (const comp of action.surfaceUpdate.components) {
+                  if (comp.webFrameSrcdoc) {
+                    htmlContent = comp.webFrameSrcdoc.htmlContent.literalString;
+                    height = comp.webFrameSrcdoc.height || 550;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (htmlContent) {
+              appendLog(`[SYSTEM] Rendering sandboxed A2UI custom HTML iframe...`, 'success');
+              
+              // Automatically expand the panel
+              emulatorPanel.classList.add('expanded');
+              
+              setTimeout(() => {
+                emptyState.style.display = 'none';
+                a2uiIframe.style.display = 'block';
+                a2uiIframe.style.height = `${height}px`;
+                a2uiIframe.srcdoc = htmlContent;
+                
+                setTimeout(() => {
+                  a2uiIframe.classList.add('visible');
+                }, 50);
+              }, 500); // Wait for open transition
+            }
+          }
+        } catch (err) {
+          eventSource.close();
+          runBtn.disabled = false;
+          runBtn.innerHTML = 'Run A2A Turn';
+          
+          globalProgressBarFill.style.background = '#f87171';
+          globalProgressBarFill.style.width = '100%';
+          setTimeout(() => {
+            globalProgressBar.style.display = 'none';
+            globalProgressBarFill.style.background = 'linear-gradient(90deg, var(--accent-light) 0%, var(--green-glow) 50%, var(--accent-light) 100%)';
+          }, 1500);
+
+          appendLog(`[SYSTEM] Execution Error: ${err.message}`, 'error');
+          statusText.textContent = 'ERROR';
+          statusText.style.color = '#f87171';
+          
+          agentProgressCard.innerHTML = `
+            <div class="agent-progress-sub-block">
+              <div class="progress-header">
+                <span class="pulse-dot" style="background-color:#f87171; box-shadow:none;"></span>
+                <span>System Error</span>
+              </div>
+              <div class="progress-desc">${err.message}</div>
+            </div>
+          `;
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        eventSource.close();
+        runBtn.disabled = false;
+        runBtn.innerHTML = 'Run A2A Turn';
+        
+        globalProgressBar.style.display = 'none';
+        
+        appendLog(`[SYSTEM] EventSource stream connection error.`, 'error');
+        statusText.textContent = 'ERROR';
+        statusText.style.color = '#f87171';
+      };
+    });
+  </script>
+</body>
+</html>
