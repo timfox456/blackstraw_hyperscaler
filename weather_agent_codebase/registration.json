@@ -1,0 +1,9 @@
+﻿{
+  "displayName": "Weather Forecast Agent",
+  "description": "Weather agent (ADK) with OTel.",
+  "adkAgentDefinition": {
+    "provisionedReasoningEngine": {
+      "reasoningEngine": "projects/413407391500/locations/us-central1/reasoningEngines/5186025263045017600"
+    }
+  }
+}

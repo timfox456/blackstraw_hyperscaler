@@ -1,0 +1,13 @@
+{
+  "_comment_pathway": "Pathway B (PDF Section 1) - Use this variant ONLY if the host agent is deployed to Cloud Run / GKE / external VM (not Reasoning Engine). Replace the url below with the Cloud Run service URL once deployed.",
+
+  "name": "projects/gemini-enterprise-app-499621/locations/global/collections/default_collection/engines/gemini-enterprise-app/assistants/default_assistant/agents/host_agent_a2ui",
+  "displayName": "Weather Host Orchestrator",
+  "description": "Orchestrator agent that delegates weather queries to the remote Weather Forecast Agent.",
+  "a2aAgentDefinition": {
+    "url": "https://host-agent-PROJECT_NUMBER.us-central1.run.app"
+  },
+  "authorizationConfig": {
+    "authorizationId": "host-agent-auth-v1"
+  }
+}

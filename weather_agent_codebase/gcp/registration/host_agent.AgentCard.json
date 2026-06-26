@@ -1,0 +1,32 @@
+{
+  "_comment": "A2A AgentCard payload (PDF Section 1, Page 2) for the Host Orchestrator. After deploying host_agent to Reasoning Engine, replace REASONING_ENGINE_ID below.",
+
+  "name": "Weather Host Orchestrator",
+  "description": "Orchestrator agent that routes weather questions to the Weather Forecast Agent over A2A and returns the answer to the user.",
+  "version": "1.0.0",
+  "protocolVersion": "0.3.0",
+  "preferredTransport": "HTTP+JSON",
+  "url": "https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gemini-enterprise-app-499621/locations/us-central1/reasoningEngines/REPLACE_WITH_HOST_AGENT_REASONING_ENGINE_ID/a2a",
+
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/plain"],
+  "supportsAuthenticatedExtendedCard": true,
+
+  "capabilities": {
+    "streaming": true,
+    "extensions": []
+  },
+
+  "skills": [
+    {
+      "id": "weather-host-orchestration",
+      "name": "Weather Orchestration",
+      "description": "Accepts natural-language weather questions, fans out to the remote Weather Forecast Agent, and consolidates the response.",
+      "tags": ["weather", "orchestration", "a2a", "delegation"],
+      "examples": [
+        "What is the weather like in Chicago and Miami?",
+        "Compare the temperature in Seattle vs Denver today."
+      ]
+    }
+  ]
+}

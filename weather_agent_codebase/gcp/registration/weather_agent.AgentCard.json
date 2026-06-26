@@ -1,0 +1,51 @@
+{
+    "_comment": "A2A AgentCard payload (PDF Section 1, Page 2) for the Weather Forecast Agent. Served from /.well-known/agent.json on the Reasoning Engine's A2A endpoint and ingested by Gemini Enterprise on registration.",
+    "name": "Weather Forecast Agent",
+    "description": "Returns current weather conditions for any location using a backed get_weather tool.",
+    "version": "1.0.0",
+    "protocolVersion": "0.3.0",
+    "preferredTransport": "HTTP+JSON",
+    "url": "https://us-central1-aiplatform.googleapis.com/v1beta1/projects/gemini-enterprise-app-499621/locations/us-central1/reasoningEngines/6055219991127523328/a2a",
+    "defaultInputModes": ["text/plain", "image/*"],
+    "defaultOutputModes": ["text/plain"],
+    "supportsAuthenticatedExtendedCard": true,
+    "capabilities": {
+      "streaming": true,
+      "extensions": [
+        {
+          "uri": "https://a2ui.org/a2a-extension/a2ui/v0.8",
+          "description": "Ability to render A2UI components (weather cards, temperature widgets).",
+          "required": false,
+          "params": {
+            "supportedCatalogIds": [
+              "https://a2ui.org/specification/v0_8/standard_catalog_definition.json"
+            ]
+          }
+        }
+      ]
+    },
+    "skills": [
+      {
+        "id": "weather-forecast-lookup",
+        "name": "Weather Forecast Lookup",
+        "description": "Looks up current weather (temperature, conditions) for a named city or location and returns a natural-language summary.",
+        "tags": ["weather", "forecast", "temperature", "location"],
+        "examples": [
+          "What's the weather in Chicago?",
+          "Tell me the forecast for Miami today.",
+          "How hot is it in Phoenix right now?"
+        ]
+      },
+      {
+        "id": "weather-image-analysis",
+        "name": "Weather Image Analysis",
+        "description": "Analyzes an uploaded weather-related image and provides commentary on conditions shown.",
+        "tags": ["weather", "image", "attachment", "analysis"],
+        "examples": [
+          "What's the weather like in this photo?",
+          "Analyze this sky image",
+          "What conditions does this image show?"
+        ]
+      }
+    ]
+  }

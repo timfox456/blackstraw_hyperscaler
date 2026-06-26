@@ -1,0 +1,15 @@
+{
+  "_comment_pathway": "Pathway A (PDF Section 1) - Weather agent is packaged with google-adk and deployed to Vertex AI Reasoning Engine, so it is registered with adkAgentDefinition referencing the reasoningEngines resource path.",
+  "_comment_register_cmd": "curl -X POST -H 'Authorization: Bearer $(gcloud auth print-access-token)' -H 'Content-Type: application/json' -d @weather_agent.adkAgentDefinition.json 'https://discoveryengine.googleapis.com/v1alpha/projects/gemini-enterprise-app-499621/locations/global/collections/default_collection/engines/gemini-enterprise-app/assistants/default_assistant/agents'",
+  "_comment_patch_cmd": "IMPORTANT: never DELETE+re-create to update (PDF: 30-day soft-delete cache locks authorizationId). Always PATCH: curl -X PATCH '.../agents/weather_agent_a2ui?updateMask=adkAgentDefinition' -d @...",
+
+  "name": "projects/gemini-enterprise-app-499621/locations/global/collections/default_collection/engines/gemini-enterprise-app/assistants/default_assistant/agents/weather_agent_a2ui",
+  "displayName": "Weather Forecast Agent",
+  "description": "ADK weather agent that returns current weather for any location via the get_weather tool.",
+  "adkAgentDefinition": {
+    "reasoningEngine": "projects/gemini-enterprise-app-499621/locations/us-central1/reasoningEngines/4209940412556640256"
+  },
+  "authorizationConfig": {
+    "authorizationId": "weather-agent-auth-v1"
+  }
+}

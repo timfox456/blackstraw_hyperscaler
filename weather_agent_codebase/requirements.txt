@@ -1,0 +1,18 @@
+# Core ADK + Vertex (Sections 1, 3)
+google-adk>=2.0.0
+google-cloud-aiplatform[agent_engines]>=1.91.0
+vertexai>=1.0.0
+
+# Firestore persistent state (Section 3)
+google-cloud-firestore>=2.16.0
+
+# OpenTelemetry + GCP exporters for GenAI semantic conventions (Section 6)
+opentelemetry-sdk>=1.27.0
+opentelemetry-api>=1.27.0
+opentelemetry-exporter-gcp-trace>=1.7.0
+opentelemetry-exporter-gcp-monitoring>=1.7.0a0
+opentelemetry-instrumentation-requests>=0.48b0
+
+# A2A fan-out
+requests>=2.31.0
+google-auth>=2.30.0

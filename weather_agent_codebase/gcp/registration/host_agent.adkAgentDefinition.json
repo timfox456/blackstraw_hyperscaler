@@ -1,0 +1,13 @@
+{
+  "_comment_pathway": "Pathway A (PDF Section 1) - Host/orchestrator agent is also deployed to Vertex AI Reasoning Engine. The reasoningEngine ID below is a placeholder - replace with the ID printed by deploy_agent_engine.py after deploying host_agent.",
+
+  "name": "projects/gemini-enterprise-app-499621/locations/global/collections/default_collection/engines/gemini-enterprise-app/assistants/default_assistant/agents/host_agent_a2ui",
+  "displayName": "Weather Host Orchestrator",
+  "description": "Orchestrator agent that delegates weather queries to the remote Weather Forecast Agent (A2A protocol).",
+  "adkAgentDefinition": {
+    "reasoningEngine": "projects/gemini-enterprise-app-499621/locations/us-central1/reasoningEngines/REPLACE_WITH_HOST_AGENT_REASONING_ENGINE_ID"
+  },
+  "authorizationConfig": {
+    "authorizationId": "host-agent-auth-v1"
+  }
+}
